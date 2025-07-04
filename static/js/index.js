@@ -393,7 +393,28 @@ window.addEventListener("beforeunload", (event) => {
 });
 
 
-setInterval(updateFooter, 1000);
-window.addEventListener("load", updateFooter);
+// フッターの自動更新ループ
+function startFooterLoop() {
+    let lastSecond = null;
+
+    function tick() {
+        const now = new Date();
+        const currentSecond = now.getSeconds();
+        if (currentSecond !== lastSecond) {
+            updateFooter();
+            lastSecond = currentSecond;
+        }
+        requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+
+// 初期化（load時）
+window.addEventListener("load", () => {
+    updateFooter();
+    startFooterLoop();
+});
+
 
 renderLogs();
