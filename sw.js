@@ -1,0 +1,66 @@
+const CACHE_VERSION='v1.0.2';
+const CACHE_NAME = `${self.registration.scope}!${CACHE_VERSION}`;
+
+const urlsToCache = [
+    "/",
+    "/index.html",
+    "/setting.html",
+    "/static/js/index.js",
+    "/static/js/setting.js",
+    "/static/images/favicon.ico"
+];
+
+
+// キャッシュの追加
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        // キャッシュを開く
+        caches.open(CACHE_NAME).then((cache) => {
+            // 指定されたリソースをキャッシュに追加
+            return cache.addAll(urlsToCache);
+        })
+    );
+    //インストール時にすぐに待機からアクティブに変更
+    event.waitUntil(self.skipWaiting());
+});
+
+
+// 古いキャッシュの削除
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return cacheNames.filter((cacheName) => {
+                // このスコープに所属且つCACHE_NAMEではないキャッシュを探す
+                return cacheName.startsWith(`${registration.scope}!`) &&
+                cacheName !== CACHE_NAME;
+            });
+        }).then((cachesToDelete) => {
+            return Promise.all(cachesToDelete.map((cacheName) => {
+                // 古いキャッシュを削除する
+                return caches.delete(cacheName);
+            }));
+        })
+    );
+    //既に読み込まれているサイトも制御対象にする
+    event.waitUntil(self.clients.claim());
+});
+
+
+// リクエスト応答
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request).then((response) => {
+            // 有効なレスポンスのみキャッシュ
+            if (response && response.status === 200 && response.type === 'basic') {
+                const resClone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, resClone);
+                });
+            }
+            return response;
+        }).catch(() => {
+            // ネットワーク失敗時はキャッシュを返す
+            return caches.match(event.request);
+        })
+    );
+});

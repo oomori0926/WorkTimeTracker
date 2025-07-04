@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings</title>
+    <link rel="manifest" href="manifest.json">
+	<link rel="icon" href="static/images/favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+	<script src="static/js/sw_update_check.js"></script>
+	<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 font-sans p-6">
+    <header class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-2">
+            <img src="static/images/WorkTimeTracker.png" alt="Icon" class="w-7 h-7" />
+            <h1 class="text-xl font-bold text-gray-800">
+                WorkTimeTracker
+            </h1>
+        </div>
+        <nav class="space-x-4 text-sm text-blue-600">
+            <a href="index.html">Home</a>
+            <a href="setting.html">Setting</a>
+        </nav>
+    </header>
+
+    <!-- 登録 / 編集・削除ボタン -->
+    <div class="max-w-full mx-auto flex justify-between items-center mb-4">
+        <button onclick="openModal()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold px-6 py-1.5 rounded-md">
+            <i class="ri-add-line"></i> Add
+        </button>
+        <div class="flex gap-3">
+            <button id="btnEdit" class="bg-indigo-500 enabled:hover:bg-indigo-600 text-white text-sm px-5 py-1.5 rounded-md disabled:opacity-50" onclick="editSelected()" disabled>
+                <i class="ri-edit-2-fill"></i> Edit
+            </button>
+            <button id="btnDelete" class="bg-red-500 enabled:hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-md disabled:opacity-50" onclick="deleteSelected()" disabled>
+                <i class="ri-delete-bin-6-line"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- 詳細表示 -->
+    <div id="projectList" class="max-w-full mx-auto space-y-3"></div>
+
+    <!-- フッター -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white text-sm px-4 h-[55px] flex flex-col sm:flex-row justify-between items-center gap-2 z-50">
+        <div class="flex gap-4">
+            <button onclick="exportData()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-1.5 rounded text-sm">
+                <i class="ri-download-2-line"></i> Export
+            </button>
+            <label class="cursor-pointer inline-block bg-gray-600 hover:bg-gray-700 px-4 py-1.5 rounded text-sm text-white">
+                <i class="ri-upload-2-line"></i> Import
+                <input id="importFile" type="file" accept=".json" class="hidden" onchange="importData(event)" />
+            </label>
+        </div>
+        <span class="text-gray-400 hidden sm:inline">Data Backup & Restore</span>
+    </footer>
+
+    <!-- モーダル -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-6 rounded-xl shadow-md max-w-md w-full">
+            <h2 class="text-xl font-bold mb-2">
+                Add Project
+            </h2>
+            <p class="text-sm text-gray-500 mb-4">
+                ※<span class="text-red-500 font-bold"> * </span>は必須項目
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label for="projectId" class="block text-sm font-medium text-gray-700 mb-1">
+                        工事番号 <span class="text-red-500 font-bold">*</span>
+                    </label>
+                    <input id="projectId" type="text" placeholder="例：1234567DM01" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div>
+                    <label for="projectName" class="block text-sm font-medium text-gray-700 mb-1">
+                        工事名称
+                    </label>
+                    <input id="projectName" type="text" placeholder="例：システム開発" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div>
+                    <label for="estimate" class="block text-sm font-medium text-gray-700 mb-1">
+                        見積工数 (H)
+                    </label>
+                    <input id="estimate" type="number" placeholder="例：123" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div>
+                    <label for="dueDate" class="block text-sm font-medium text-gray-700 mb-1">
+                        納期
+                    </label>
+                    <input id="dueDate" type="date" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div class="flex gap-4 pt-2">
+                    <button onclick="addProject()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-md w-full">
+                        Save
+                    </button>
+                    <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-2 rounded-md w-full">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<script src="static/js/setting.js"></script>
+</body>
+</html>

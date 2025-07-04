@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="icon" href="static/images/favicon.ico" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+	<script src="static/js/sw_update_check.js"></script>
+	<script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+
+<body class="bg-gray-50 font-sans p-6">
+    <header class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-2">
+            <img src="static/images/WorkTimeTracker.png" alt="Icon" class="w-7 h-7" />
+            <h1 class="text-xl font-bold text-gray-800">
+                WorkTimeTracker
+            </h1>
+        </div>
+        <nav class="space-x-4 text-sm text-blue-600">
+            <a href="index.html">Home</a>
+            <a href="setting.html">Setting</a>
+        </nav>
+    </header>
+
+    <!-- 並び替え / 編集・削除ボタン -->
+    <div class="max-w-full mx-auto flex justify-between items-center mb-4">
+        <button id="sortModeBtn" onclick="toggleSortMode()" class="bg-slate-500 hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded-md transition-all duration-200 flex items-center gap-1">
+            <i id="sortModeIcon" class="ri-list-settings-line"></i> Reorder
+        </button>
+
+        <div class="flex gap-3">
+            <button id="btnEdit" class="bg-indigo-500 enabled:hover:bg-indigo-600 text-white text-sm px-5 py-1.5 rounded-md disabled:opacity-50" onclick="editSelectedLog()" disabled>
+                <i class="ri-edit-2-fill"></i> Edit
+            </button>
+            <button id="btnDelete" class="bg-red-500 enabled:hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-md disabled:opacity-50" onclick="deleteSelectedLog()" disabled>
+                <i class="ri-delete-bin-6-line"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- 詳細表示 -->
+    <div id="projectLogs" class="mt-4 max-w-full mx-auto mb-[60px] space-y-3"></div>
+
+    <!-- フッター -->
+    <footer id="timerFooter" class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white text-sm flex justify-between items-center px-4 h-[55px] hidden z-50">
+        <div id="footerToday"></div>
+        <div id="footerStatus"></div>
+    </footer>
+
+    <!-- モーダル -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white shadow-lg p-6 max-w-md rounded-xl w-full">
+            <h2 id="modalTitle" class="text-xl font-bold mb-2">
+                Work Record
+            </h2>
+            <p class="text-sm text-gray-500 mb-4">
+                ※<span class="text-red-500 font-bold"> * </span>は必須項目
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label for="workDate" class="block text-sm font-medium text-gray-700 mb-1">
+                        作業日 <span class="text-red-500 font-bold">*</span>
+                    </label>
+                    <input id="workDate" type="date" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div>
+                    <label for="workHours" class="block text-sm font-medium text-gray-700 mb-1">
+                        工数 (H) <span class="text-red-500 font-bold">*</span>
+                    </label>
+                    <input id="workHours" type="number" step="0.01" placeholder="例：1.5" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div>
+                    <label for="workMemo" class="block text-sm font-medium text-gray-700 mb-1">
+                        作業内容
+                    </label>
+                    <input id="workMemo" type="text" placeholder="例：開発作業" class="border border-gray-300 p-2 rounded-md w-full" />
+                </div>
+                <div class="flex gap-4 pt-2">
+                    <button onclick="submitLog()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-md w-full">
+                        Save
+                    </button>
+                    <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-2 rounded-md w-full">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+	<script src="static/js/index.js"></script>
+</body>
+</html>
