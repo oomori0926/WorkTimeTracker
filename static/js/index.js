@@ -9,6 +9,7 @@ let sortMode = false;
 let editIndex = null;
 let activeProject = null;
 let selectedLogIndex = null;
+let activeTimers = {};
 
 
 // モーダル関数(開く)
@@ -168,16 +169,10 @@ function renderLogs() {
             <button onclick="openModal('${project.id}')" class="text-sm text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded">
                 <i class="ri-add-line"></i>
             </button>
-
-
             <button onclick="toggleTimer('${project.id}')" class="${activeTimers[project.id] ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white px-2 py-1 rounded text-sm">
                 ${activeTimers[project.id] ? 'Stop' : 'Start'}
             </button>
         </div>
-
-
-
-
         </div>
         <div class="flex justify-between items-center mt-1">
             <div class="flex items-center gap-2">
@@ -292,14 +287,6 @@ function toggleSortMode() {
 }
 
 
-
-
-
-
-// タイマー状態管理
-let activeTimers = {};
-
-
 // 現在の日付（YYYY-MM-DD）
 function getTodayDate() {
     const now = new Date();
@@ -307,6 +294,13 @@ function getTodayDate() {
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+
+// 本日の合計作業時間を取得
+function getTodayTotalHours() {
+    const today = getTodayDate();
+    return logs.filter(l => l.date === today).reduce((sum, l) => sum + l.hours, 0);
 }
 
 
@@ -361,13 +355,6 @@ function stopTimer(projectId) {
     delete activeTimers[projectId];
     updateFooter();
     renderLogs();
-}
-
-
-// 本日の合計作業時間を取得
-function getTodayTotalHours() {
-    const today = getTodayDate();
-    return logs.filter(l => l.date === today).reduce((sum, l) => sum + l.hours, 0);
 }
 
 
