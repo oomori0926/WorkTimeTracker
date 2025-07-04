@@ -210,4 +210,35 @@ function importData(event) {
 }
 
 
+// エクスポート＆アプリ初期化関数
+function resetAppData() {
+    if (!confirm("データをエクスポートしてからアプリを初期化します。続行しますか？")) return;
+
+    // エクスポート
+    const data = {
+        project_settings: JSON.parse(localStorage.getItem("project_settings") || "[]"),
+        project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]")
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `project_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // このアプリのデータだけ削除
+    localStorage.removeItem("project_settings");
+    localStorage.removeItem("project_logs");
+    // このアプリのキャッシュだけ削除
+    caches.keys().then(keys => {
+        const scopePrefix = `${location.origin}/WorkTimeTracker`;
+        keys.filter(key => key.startsWith(scopePrefix))
+            .forEach(key => caches.delete(key));
+    });
+    alert("データをエクスポートしてアプリを初期化しました。");
+    location.reload();
+}
+
+
 renderList();

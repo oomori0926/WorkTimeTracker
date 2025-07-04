@@ -53,7 +53,9 @@
                 <input id="importFile" type="file" accept=".json" class="hidden" onchange="importData(event)" />
             </label>
         </div>
-        <span class="text-gray-400 hidden sm:inline">Data Backup & Restore</span>
+        <button onclick="resetAppData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm">
+            <i class="ri-refresh-line"></i> Export & Reset
+        </button>
     </footer>
 
     <!-- モーダル -->
