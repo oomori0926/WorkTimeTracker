@@ -1,4 +1,4 @@
-const CACHE_VERSION='v1.0.4';
+const CACHE_VERSION='v1.0.5';
 const CACHE_NAME = `${self.registration.scope}!${CACHE_VERSION}`;
 
 const urlsToCache = [
@@ -47,10 +47,16 @@ self.addEventListener('activate', (event) => {
 
 // リクエスト応答
 self.addEventListener('fetch', (event) => {
+    // 無効なスキームのリクエストは無視
+    if (!event.request.url.startsWith('http')) return;
+
     event.respondWith(
         fetch(event.request).then((response) => {
-            // 有効なレスポンスのみキャッシュ
-            if (response && response.status === 200 && response.type === 'basic') {
+            if (
+                response &&
+                response.status === 200 &&
+                response.type === 'basic'
+            ) {
                 const resClone = response.clone();
                 caches.open(CACHE_NAME).then((cache) => {
                     cache.put(event.request, resClone);
@@ -58,7 +64,6 @@ self.addEventListener('fetch', (event) => {
             }
             return response;
         }).catch(() => {
-            // ネットワーク失敗時はキャッシュを返す
             return caches.match(event.request);
         })
     );
