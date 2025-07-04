@@ -219,7 +219,7 @@ function resetAppData() {
         project_settings: JSON.parse(localStorage.getItem("project_settings") || "[]"),
         project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]")
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
