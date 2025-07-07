@@ -116,13 +116,13 @@ function renderList() {
                             <span class="text-xs text-white px-2 py-0.5 rounded ${p.estimate ? 'bg-green-500' : 'bg-gray-500'}">
                                 工数
                             </span>
-                            <span>Estimate：${p.estimate ?? " ー "}H</span>
+                            ${p.estimate != null ? `<span class="text-gray-600">Estimate：${p.estimate}H</span>` : " ー "}
                         </div>
                         <div class="flex items-center gap-2 min-w-[170px]">
                             <span class="text-xs text-white px-2 py-0.5 rounded ${p.due ? 'bg-green-500' : 'bg-gray-500'}">
                                 納期
                             </span>
-                            <span>Due：${p.due ?? " ー "}</span>
+                            <span>${p.due ?? " ー "}</span>
                         </div>
                     </div>
                 </div>
