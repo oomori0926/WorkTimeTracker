@@ -6,7 +6,6 @@ const inputDue = document.getElementById("dueDate");
 const list = document.getElementById("projectList");
 
 let settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
-let editIndex = null;
 let selectedProjectId = null;
 
 
@@ -17,7 +16,6 @@ function openModal() {
     inputName.value = "";
     inputEstimate.value = "";
     inputDue.value = "";
-    editIndex = null;
 }
 
 
@@ -41,36 +39,37 @@ function addProject() {
     const name = inputName.value.trim();
     const estimate = inputEstimate.value ? Number(inputEstimate.value) : null;
     const due = inputDue.value || null;
-    if (!id) return alert("必須項目を入力してください。");
-
-    const newItem = { id, name, estimate, due };
-    if (editIndex !== null) {
-        settings[editIndex] = newItem;
-    } else {
-        // 新規追加時、同じIDがあるか確認
-        const existingIndex = settings.findIndex(p => p.id === id);
-        if (existingIndex !== -1) {
-            const confirmed = confirm(`${id} は既に登録されています。上書きしますか？`);
-            if (!confirmed) return;
-            settings[existingIndex] = newItem;
-        } else {
-            settings.push(newItem);
-        }
+    if (!id) {
+        alert("必須項目を入力してください。");
+        return;
     }
+
+    // 編集時にIDが変更されたら旧データ削除
+    if (selectedProjectId && selectedProjectId !== id) {
+        settings = settings.filter(p => p.id !== selectedProjectId);
+    }
+    // 新規 or 上書き確認
+    if (settings.some(p => p.id === id)) {
+        if (!confirm(`${id} は既に存在します。上書きしてもよろしいですか？`)) {
+            return;
+        }
+        settings = settings.filter(p => p.id !== id);
+    }
+    settings.push({ id, name, estimate, due });
     saveSettings();
 }
 
 
 // 編集関数
 function editProject(id) {
-    const idx = settings.findIndex(p => p.id === id);
-    if (idx === -1) return;
-    const p = settings[idx];
+    const p = settings.find(p => p.id === id);
+    if (!p) return;
+
     inputId.value = p.id;
-    inputName.value = p.name ?? "";
-    inputEstimate.value = p.estimate ?? "";
-    inputDue.value = p.due ?? "";
-    editIndex = idx;
+    inputName.value = p.name;
+    inputEstimate.value = p.estimate;
+    inputDue.value = p.due;
+    selectedProjectId = p.id;
     modal.classList.remove("hidden");
 }
 
