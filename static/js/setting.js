@@ -47,7 +47,15 @@ function addProject() {
     if (editIndex !== null) {
         settings[editIndex] = newItem;
     } else {
-        settings.push(newItem);
+        // 新規追加時、同じIDがあるか確認
+        const existingIndex = settings.findIndex(p => p.id === id);
+        if (existingIndex !== -1) {
+            const confirmed = confirm(`${id} は既に登録されています。上書きしますか？`);
+            if (!confirmed) return;
+            settings[existingIndex] = newItem;
+        } else {
+            settings.push(newItem);
+        }
     }
     saveSettings();
 }
