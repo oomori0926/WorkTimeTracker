@@ -58,6 +58,10 @@ function openModal(projectId) {
     document.getElementById("modalTitle").textContent = `Work Record - ${projectId}`;
     activeProject = projectId;
     selectedProjectId = projectId;
+    editIndex = null;
+    document.getElementById("workDate").value = getTodayDate();
+    document.getElementById("workHours").value = "";
+    document.getElementById("workMemo").value = "";
     updateWorkMemoSuggestions();
     modal.classList.remove("hidden");
 }
@@ -192,7 +196,7 @@ function renderLogs() {
 
         const wrapper = document.createElement("div");
         wrapper.dataset.id = project.id;
-        wrapper.className = `bg-white p-4 pt-3 pb-3 rounded-xl shadow log-wrapper`;
+        wrapper.className = `bg-white px-4 py-3 rounded-xl shadow log-wrapper`;
 
         // 詳細トグル
         const isOpen = openedProjects[project.id] ?? false;

@@ -1,4 +1,4 @@
-const CACHE_VERSION='v1.2.1';
+const CACHE_VERSION='v1.2.2';
 const CACHE_NAME = `${self.registration.scope}!${CACHE_VERSION}`;
 
 const urlsToCache = [
