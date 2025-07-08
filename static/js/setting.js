@@ -117,7 +117,7 @@ function renderList() {
 
     settings.forEach(p => {
         const div = document.createElement("div");
-        div.className = "project-item bg-white shadow p-4 pt-2 pb-2 flex justify-between items-center rounded-xl";
+        div.className = "project-item bg-white shadow px-4 py-2 flex justify-between items-center rounded-xl";
 
         div.innerHTML = `
         <div class="flex items-center gap-3">
