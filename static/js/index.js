@@ -29,11 +29,36 @@ scrollBtn.addEventListener("click", () => {
 });
 
 
+// 登録した作業内容を取得
+function updateWorkMemoSuggestions() {
+    const datalist = document.getElementById("workMemoSuggestions");
+    datalist.innerHTML = "";
+
+    const seen = new Set();
+    const recentMemos = [];
+
+    // 最新順でユニークな作業内容を抽出(Auto Timer除外)
+    [...logs].reverse().forEach(log => {
+        if (log.memo && log.memo !== "Auto Timer" && !seen.has(log.memo)) {
+            seen.add(log.memo);
+            recentMemos.push(log.memo);
+        }
+    });
+    // ここで取得件数調整
+    recentMemos.slice(0, 5).forEach(memo => {
+        const option = document.createElement("option");
+        option.value = memo;
+        datalist.appendChild(option);
+    });
+}
+
+
 // モーダル関数(開く)
 function openModal(projectId) {
     document.getElementById("modalTitle").textContent = `Work Record - ${projectId}`;
     activeProject = projectId;
     selectedProjectId = projectId;
+    updateWorkMemoSuggestions();
     modal.classList.remove("hidden");
 }
 
@@ -116,6 +141,7 @@ function editLog(index) {
     document.getElementById("workDate").value = log.date;
     document.getElementById("workHours").value = log.hours;
     document.getElementById("workMemo").value = log.memo;
+    updateWorkMemoSuggestions();
     modal.classList.remove("hidden");
 }
 
