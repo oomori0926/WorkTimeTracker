@@ -19,13 +19,17 @@
             </h1>
         </div>
         <nav class="space-x-4 text-sm text-blue-600">
-            <a href="index.html">Home</a>
-            <a href="setting.html">Setting</a>
+			<a href="index.html" class="hover:text-blue-900">
+				<i class="ri-home-2-line"></i> Home
+			</a>
+			<a href="setting.html" class="hover:text-blue-900">
+				<i class="ri-settings-3-line"></i> Setting
+			</a>
         </nav>
     </header>
 
     <!-- 登録 / 編集・削除ボタン -->
-    <div class="max-w-full mx-auto flex justify-between items-center mb-4">
+	<div class="sticky top-0 bg-white z-10 p-2 rounded shadow max-w-full mx-auto flex justify-between items-center mb-6">
         <button onclick="openModal()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold px-6 py-1.5 rounded-md">
             <i class="ri-add-line"></i> Add
         </button>
@@ -40,7 +44,12 @@
     </div>
 
     <!-- 詳細表示 -->
-    <div id="projectList" class="max-w-full mx-auto space-y-3"></div>
+    <div id="projectList" class="max-w-full mx-auto mb-[95px] space-y-3"></div>
+
+	<!-- 上部移動ボタン -->
+	<button id="scrollTopBtn" class="fixed bottom-[65px] right-6 bg-blue-600 text-white px-3 py-2 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 hover:bg-blue-700">
+		<i class="ri-arrow-up-s-line"></i>
+	</button>
 
     <!-- フッター -->
     <footer class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white text-sm px-4 h-[55px] flex justify-between items-center gap-2 z-50">

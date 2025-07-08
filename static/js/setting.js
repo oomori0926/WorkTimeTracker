@@ -4,9 +4,26 @@ const inputName = document.getElementById("projectName");
 const inputEstimate = document.getElementById("estimate");
 const inputDue = document.getElementById("dueDate");
 const list = document.getElementById("projectList");
+const scrollBtn = document.getElementById("scrollTopBtn");
 
 let settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
 let selectedProjectId = null;
+
+
+// スクロールボタン
+window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+        scrollBtn.classList.remove("opacity-0", "pointer-events-none");
+        scrollBtn.classList.add("opacity-100");
+    } else {
+        scrollBtn.classList.add("opacity-0", "pointer-events-none");
+        scrollBtn.classList.remove("opacity-100");
+    }
+});
+
+scrollBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 
 // モーダル関数(開く)

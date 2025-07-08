@@ -2,6 +2,7 @@ const openedProjects = {};
 const modal = document.getElementById("modal");
 const projectLogsDiv = document.getElementById("projectLogs");
 const settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
+const scrollBtn = document.getElementById("scrollTopBtn");
 
 let logs = JSON.parse(localStorage.getItem("project_logs") || "[]");
 let sortable = null;
@@ -10,6 +11,22 @@ let editIndex = null;
 let activeProject = null;
 let selectedLogIndex = null;
 let activeTimers = {};
+
+
+// スクロールボタン
+window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+        scrollBtn.classList.remove("opacity-0", "pointer-events-none");
+        scrollBtn.classList.add("opacity-100");
+    } else {
+        scrollBtn.classList.add("opacity-0", "pointer-events-none");
+        scrollBtn.classList.remove("opacity-100");
+    }
+});
+
+scrollBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 
 // モーダル関数(開く)
