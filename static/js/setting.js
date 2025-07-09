@@ -47,6 +47,7 @@ function saveSettings() {
     localStorage.setItem("project_settings", JSON.stringify(settings));
     renderList();
     closeModal();
+    showStorageUsage();
 }
 
 
@@ -264,5 +265,47 @@ function resetAppData() {
     location.reload();
 }
 
+
+// ローカルストレージの使用容量を取得
+function getLocalStorageUsage() {
+    let total = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+        const value = localStorage.getItem(key);
+        total += key.length + value.length;
+        }
+    }
+    // バイト → KB に変換（1文字 ≒ 1バイト）
+    return (total / 1024).toFixed(2);
+}
+
+
+// ローカルストレージの使用容量を表示
+function showStorageUsage() {
+    const bar = document.getElementById("storageBar");
+    const text = document.getElementById("storageText");
+    if (!bar || !text) return;
+
+    const usageKB = parseFloat(getLocalStorageUsage());
+    const usageMB = (usageKB / 1024).toFixed(2);
+    const percent = ((usageMB / 5.0) * 100).toFixed(1);
+
+    // 色変更
+    if (percent >= 90) {
+        bar.className = "bg-red-500 h-2.5 rounded-full";
+    } else if (percent >= 70) {
+        bar.className = "bg-yellow-500 h-2.5 rounded-full";
+    } else {
+        bar.className = "bg-green-500 h-2.5 rounded-full";
+    }
+
+    bar.style.width = `${Math.min(percent, 100)}%`;
+    text.textContent = `${usageMB} MB / 5.0 MB（ ${percent}% ）使用中`;
+}
+
+
+window.addEventListener("load", () => {
+    showStorageUsage();
+});
 
 renderList();

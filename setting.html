@@ -62,9 +62,28 @@
                 <input id="importFile" type="file" accept=".json" class="hidden" onchange="importData(event)" />
             </label>
         </div>
-        <button onclick="resetAppData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm">
-            <i class="ri-refresh-line"></i> Export & Reset
-        </button>
+        <div class="flex items-center gap-4">
+            <div class="relative group">
+                <div class="text-white text-xl cursor-pointer flex items-center justify-center">
+                    <i class="ri-information-line"></i>
+                </div>
+                <div id="storageTooltip" class="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block
+                                                bg-white text-gray-800 text-sm px-3 py-2 rounded shadow z-50 w-64 space-y-1
+                                                after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2
+                                                after:border-8 after:border-transparent after:border-t-white">
+                    <div class="text-xs">
+                        <i class="ri-database-2-line"></i> Local Storage
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="storageBar" class="bg-green-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div id="storageText" class="text-xs text-right"></div>
+                </div>
+            </div>
+            <button onclick="resetAppData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm">
+                <i class="ri-refresh-line"></i> Export & Reset
+            </button>
+        </div>
     </footer>
 
     <!-- モーダル -->
