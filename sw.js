@@ -4,6 +4,7 @@ const CACHE_NAME = `${self.registration.scope}!${CACHE_VERSION}`;
 const urlsToCache = [
     "./index.html",
     "./setting.html",
+    "./static/js/common.js.js",
     "./static/js/index.js",
     "./static/js/setting.js",
     "./static/images/favicon.ico"
