@@ -1,10 +1,10 @@
-const CACHE_VERSION='v1.4.2';
+const CACHE_VERSION='v1.4.3';
 const CACHE_NAME = `${self.registration.scope}!${CACHE_VERSION}`;
 
 const urlsToCache = [
     "./index.html",
     "./setting.html",
-    "./static/js/common.js.js",
+    "./static/js/common.js",
     "./static/js/index.js",
     "./static/js/setting.js",
     "./static/images/favicon.ico"
