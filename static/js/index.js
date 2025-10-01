@@ -199,12 +199,29 @@ function toggleSortMode() {
         if (sortable) sortable.destroy();
         renderLogs();
 }
+}
 
+// 月詳細切替
+function toggleExpandMonth(projectId, month) {
+    if (!expandedMonthLogs[projectId]) expandedMonthLogs[projectId] = {};
+    expandedMonthLogs[projectId][month] = !expandedMonthLogs[projectId][month];
+    renderLogs();
+}
 
-// 表示関数
-function renderLogs() {
+// 表示月変更
+function changeSelectedMonth(projectId, month) {
+    selectedMonthByProject[projectId] = month;
+    if (expandedMonthLogs[projectId]) {
+        delete expandedMonthLogs[projectId];
+    }
+    renderLogs();
+}
+
+// 表示
+function renderLogs(triggerType = "manual") {
     projectLogsDiv.innerHTML = "";
     selectedLogIndex = null;
+    updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
 
     settings.forEach(project => {
         const projectLogs = logs.filter(l => l.project === project.id);
@@ -226,17 +243,17 @@ function renderLogs() {
             if (daysLeft <= 5) dueColor = "bg-red-500";
             else if (daysLeft <= 15) dueColor = "bg-orange-400";
             else dueColor = "bg-green-500";
-            dueText += ` (${daysLeft}日)`;
+            dueText += `（残り：${daysLeft}日）`;
         }
 
         const wrapper = document.createElement("div");
         wrapper.dataset.id = project.id;
-        wrapper.className = `bg-white px-4 py-3 rounded-xl shadow log-wrapper`;
+        wrapper.className = "bg-white px-4 py-3 rounded-md shadow log-wrapper";
 
         // 詳細トグル
         const isOpen = openedProjects[project.id] ?? false;
-        const showDetailBtn = totalHours > 0
-        ? `<button onclick="toggleDetail('${project.id}')" class="text-sm text-blue-600 hover:text-blue-900 underline">
+        const showDetailBtn = projectLogs.length > 0
+        ? `<button onclick="toggleDetail('${project.id}')" class="toggle-detail-btn text-sm text-blue-600 hover:text-blue-900 underline">
             ${isOpen ? '▲ Hide Detail' : '▼ Show Detail'}
         </button>`
         : "";
@@ -258,7 +275,9 @@ function renderLogs() {
         </div>
         <div class="flex justify-between items-center mt-1">
             <div class="flex items-center gap-2">
-                <span class="text-xs text-white px-2 py-0.5 rounded ${progressColor}">工数</span>
+                <span class="text-xs text-white px-2 py-0.5 rounded ${progressColor}">
+                    工数
+                </span>
                 <p class="text-sm">
                     Total：<strong>${totalHours.toFixed(2)}H</strong>
                     ${project.estimate != null ? `<span class="text-gray-600"> / Estimate：${project.estimate}H</span>` : ""}
@@ -279,27 +298,80 @@ function renderLogs() {
         const detailDiv = document.createElement("div");
         detailDiv.className = `${isOpen ? '' : 'hidden'} mt-1 space-y-2 pt-2`;
 
-        projectLogs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach((log, i) => {
-            const globalIndex = logs.indexOf(log);
-            const row = document.createElement("div");
-            row.className = "log-row flex justify-between items-center bg-white border p-2 rounded";
+        const groupedByMonth = {};
+        projectLogs.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(log => {
+            const monthKey = log.date.slice(0, 7);
+            if (!groupedByMonth[monthKey]) groupedByMonth[monthKey] = [];
+            groupedByMonth[monthKey].push(log);
+        });
 
-            // 詳細表示
-            row.innerHTML = `
+        const monthKeys = Object.keys(groupedByMonth).sort().reverse();
+        const latestMonth = monthKeys[0];
+        const currentSelected = selectedMonthByProject[project.id];
+        // 再描画のトリガー分岐
+        if (triggerType === "submitLog" || triggerType === "stopTimer") {
+            if (!isOpen) {
+                selectedMonthByProject[project.id] = latestMonth;
+            } else {
+                // 編集で月が変わった場合に対応
+                const editedLog = logs[logs.length - 1];
+                const editedMonth = editedLog?.date?.slice(0, 7);
+                if (editedMonth && editedMonth !== currentSelected) {
+                    selectedMonthByProject[project.id] = editedMonth;
+                }
+            }
+        } else if (triggerType === "deleteLog") {
+            if (!groupedByMonth[currentSelected]) {
+                selectedMonthByProject[project.id] = latestMonth;
+            }
+        }
+        const selectedMonth = selectedMonthByProject[project.id] ?? latestMonth;
+        const logsInMonth = groupedByMonth[selectedMonth] ?? [];
+        const isExpanded = expandedMonthLogs[project.id]?.[selectedMonth] ?? false;
+        const visibleLogs = isExpanded ? logsInMonth : logsInMonth.slice(0, 3);
+
+        const monthWrapper = document.createElement("div");
+        monthWrapper.innerHTML = `
+        <div class="flex justify-start items-center">
+                <select onchange="changeSelectedMonth('${project.id}', this.value)" class="text-sm border rounded px-2 py-1">
+                ${monthKeys.map(m => {
+                    const count = groupedByMonth[m].length;
+                    const hours = groupedByMonth[m].reduce((sum, l) => sum + l.hours, 0);
+                    return `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${m}月（${count}件 / ${hours.toFixed(2)}H）</option>`;
+                }).join('')}
+            </select>
+        </div>
+        <div class="mt-2 space-y-2">
+            ${visibleLogs.map(log => {
+                const globalIndex = logs.findIndex(l =>
+                    l.project === log.project &&
+                    l.date === log.date &&
+                    l.hours === log.hours &&
+                    l.memo === log.memo
+                );
+                return `
+                <div class="log-row flex justify-between items-center bg-white border p-2 rounded">
             <div class="flex items-center gap-2">
                 <input type="checkbox" id="log-${globalIndex}" name="logSelect" onclick="selectLog(${globalIndex})" />
                 <p class="text-sm font-medium">
                     ${log.date} - ${log.hours}H
-                    <span class="text-gray-500">${log.memo ? ` - ${log.memo}` : ""}</span>
+                            <span class="text-gray-500">${log.memo ? ` - ${log.memo}` : ''}</span>
                 </p>
+                    </div>
+                </div>
+                `;
+            }).join('')}
+            ${logsInMonth.length > 3 ? `
+            <button onclick="toggleExpandMonth('${project.id}', '${selectedMonth}')" class="text-xs text-blue-500 underline">
+                ${isExpanded ? '閉じる' : 'さらに表示'}
+            </button>
+            ` : ''}
             </div>
             `;
-            detailDiv.appendChild(row);
-        });
+        detailDiv.appendChild(monthWrapper);
         wrapper.appendChild(detailDiv);
         projectLogsDiv.appendChild(wrapper);
     });
-    updateActionButtons();
 }
 
 
