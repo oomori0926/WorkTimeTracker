@@ -57,7 +57,7 @@ function openModal(projectId) {
     inputMemo.value = "";
     updateWorkMemoSuggestions();
     modal.classList.remove("hidden");
-    }
+}
 
 // モーダル関数(閉じる)
 function closeModal() {
@@ -198,7 +198,7 @@ function toggleSortMode() {
 
         if (sortable) sortable.destroy();
         renderLogs();
-}
+    }
 }
 
 // 月詳細切替
@@ -351,12 +351,12 @@ function renderLogs(triggerType = "manual") {
                 );
                 return `
                 <div class="log-row flex justify-between items-center bg-white border p-2 rounded">
-            <div class="flex items-center gap-2">
-                <input type="checkbox" id="log-${globalIndex}" name="logSelect" onclick="selectLog(${globalIndex})" />
-                <p class="text-sm font-medium">
-                    ${log.date} - ${log.hours}H
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="log-${globalIndex}" name="logSelect" onclick="selectLog(${globalIndex})" />
+                        <p class="text-sm font-medium">
+                            ${log.date} - ${log.hours}H
                             <span class="text-gray-500">${log.memo ? ` - ${log.memo}` : ''}</span>
-                </p>
+                        </p>
                     </div>
                 </div>
                 `;
@@ -366,8 +366,8 @@ function renderLogs(triggerType = "manual") {
                 ${isExpanded ? '閉じる' : 'さらに表示'}
             </button>
             ` : ''}
-            </div>
-            `;
+        </div>
+        `;
         detailDiv.appendChild(monthWrapper);
         wrapper.appendChild(detailDiv);
         projectLogsDiv.appendChild(wrapper);
@@ -440,6 +440,153 @@ function stopTimer(projectId) {
 
 
 // ===================================
+// --- Calender ----------------------
+// ===================================
+
+// カレンダーモーダル表示
+function openCalendarModal() {
+    const now = new Date();
+    calendarYear = now.getFullYear();
+    calendarMonth = now.getMonth() + 1;
+    document.getElementById("calendarModal").classList.remove("hidden");
+    renderCalendarGrid();
+}
+
+// カレンダーモーダルを閉じる
+function closeCalendarModal() {
+    document.getElementById("calendarModal").classList.add("hidden");
+}
+
+// 表示月の変更
+function changeCalendarMonth(offset) {
+    calendarMonth += offset;
+    if (calendarMonth < 1) {
+        calendarMonth = 12;
+        calendarYear--;
+    } else if (calendarMonth > 12) {
+        calendarMonth = 1;
+        calendarYear++;
+    }
+    renderCalendarGrid();
+}
+
+// カレンダーを描画
+function renderCalendarGrid() {
+    const grid = document.getElementById("calendarGrid");
+    const wrapper = document.getElementById("calendarGridWrapper");
+    const title = document.getElementById("calendarTitle");
+    grid.innerHTML = "";
+    title.textContent = `${calendarYear}年${calendarMonth}月`;
+
+    const daysInMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+    const firstDay = new Date(calendarYear, calendarMonth - 1, 1).getDay();
+    const prevMonthDays = new Date(calendarYear, calendarMonth - 1, 0).getDate();
+
+    const logsByDate = {};
+    logs.forEach(log => {
+        if (!logsByDate[log.date]) logsByDate[log.date] = [];
+        logsByDate[log.date].push(log);
+    });
+
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    weekdays.forEach(day => {
+        const header = document.createElement("div");
+        header.className = "font-bold text-center";
+        header.textContent = day;
+        grid.appendChild(header);
+    });
+
+    for (let i = 0; i < 42; i++) {
+        const cell = document.createElement("div");
+        cell.className = "border p-2 relative h-[80px]";
+
+        let dateStr = "";
+        let dayNum = 0;
+        let isCurrentMonth = false;
+
+        if (i < firstDay) {
+            // 前月
+            dayNum = prevMonthDays - firstDay + i + 1;
+            const prevMonth = calendarMonth - 1 || 12;
+            const prevYear = calendarMonth === 1 ? calendarYear - 1 : calendarYear;
+            dateStr = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            cell.classList.add("opacity-50", "text-gray-400");
+        } else if (i < firstDay + daysInMonth) {
+            // 今月
+            dayNum = i - firstDay + 1;
+            dateStr = `${calendarYear}-${String(calendarMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            isCurrentMonth = true;
+        } else {
+            // 次月
+            dayNum = i - (firstDay + daysInMonth) + 1;
+            const nextMonth = calendarMonth + 1 > 12 ? 1 : calendarMonth + 1;
+            const nextYear = calendarMonth === 12 ? calendarYear + 1 : calendarYear;
+            dateStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+            cell.classList.add("opacity-50", "text-gray-400");
+        }
+
+        const logsForDay = logsByDate[dateStr] || [];
+        const totalHours = logsForDay.reduce((sum, log) => sum + log.hours, 0);
+        const detailText = logsForDay.map(log => `<strong>${log.project}</strong>：${log.hours}H - ${log.memo}`).join("<br>");
+
+        // 曜日判定（0=日曜, 6=土曜）
+        const weekday = new Date(dateStr).getDay();
+        let bgColor = "bg-white";
+        let textColor = "text-gray-800";
+        let hoverColor = "hover:bg-gray-100";
+
+        // 土日の色
+        if (weekday === 0) {
+            bgColor = "bg-red-100";
+            textColor = "text-red-600";
+        } else if (weekday === 6) {
+            bgColor = "bg-blue-100";
+            textColor = "text-blue-600";
+        }
+
+        cell.className += ` ${bgColor} ${textColor} ${hoverColor}`;
+        cell.innerHTML = `<strong>${dayNum}</strong><br>${totalHours ? totalHours.toFixed(2) + "H" : ""}`;
+        // ツールチップ
+        if (detailText && isCurrentMonth) {
+            cell.addEventListener("mouseenter", () => {
+                const tooltip = document.createElement("div");
+                tooltip.className = "fixed z-50 bg-white border text-xs p-2 shadow whitespace-nowrap max-w-[300px]";
+                tooltip.innerHTML = detailText;
+                document.body.appendChild(tooltip);
+
+                const rect = cell.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                const padding = 8;
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+                let top = rect.top;
+                let left = rect.right + padding;
+
+                // 右端に近い場合は左に表示（スクロールバー幅を考慮）
+                if (left + tooltipRect.width > window.innerWidth - scrollbarWidth) {
+                    left = rect.left - tooltipRect.width - padding;
+                }
+                // 下端に近い場合は上に表示
+                if (top + tooltipRect.height > window.innerHeight) {
+                    top = window.innerHeight - tooltipRect.height - padding;
+                }
+                tooltip.style.top = `${top}px`;
+                tooltip.style.left = `${left}px`;
+                cell._tooltip = tooltip;
+            });
+            cell.addEventListener("mouseleave", () => {
+                if (cell._tooltip) {
+                    cell._tooltip.remove();
+                    cell._tooltip = null;
+                }
+            });
+        }
+        grid.appendChild(cell);
+    }
+    // 高さは6週分固定
+    const gridHeight = 40 + 6 * 80;
+    wrapper.style.height = `${gridHeight}px`;
+}
+
 
 // ===================================
 // --- Footer ------------------------

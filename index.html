@@ -66,12 +66,12 @@
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
         <div class="bg-white shadow-lg p-6 rounded-xl w-full max-w-screen-md max-h-screen-md mx-8 flex flex-col justify-between">
             <div>
-            <h2 id="modalTitle" class="text-xl font-bold mb-2">
-                Work Record
-            </h2>
-            <p class="text-sm text-gray-500 mb-4">
-                ※<span class="text-red-500 font-bold"> * </span>は必須項目
-            </p>
+                <h2 id="modalTitle" class="text-xl font-bold mb-2">
+                    Work Record
+                </h2>
+                <p class="text-sm text-gray-500 mb-4">
+                    ※<span class="text-red-500 font-bold"> * </span>は必須項目
+                </p>
             </div>
             <div class="flex-1 overflow-hidden space-y-4">
                 <div>
@@ -91,17 +91,42 @@
                         作業内容
                     </label>
                     <input id="workMemo" list="workMemoSuggestions" placeholder="例：開発作業" class="border border-gray-300 p-2 rounded-md w-full h-full min-h-0" />
-					<datalist id="workMemoSuggestions"></datalist>
+                    <datalist id="workMemoSuggestions"></datalist>
                 </div>
             </div>
             <div class="flex gap-4 pt-6">
-                    <button onclick="submitLog()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-md w-full">
-                        Save
-                    </button>
-                    <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-2 rounded-md w-full">
-                        Cancel
-                    </button>
-                </div>
+                <button onclick="submitLog()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-md w-full">
+                    Save
+                </button>
+                <button onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-2 rounded-md w-full">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- カレンダーモーダル -->
+    <div id="calendarModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white shadow-lg p-6 rounded-xl w-full max-w-screen-md max-h-screen-md mx-8 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold mb-2">
+                    Work Calender
+                </h2>
+                <button onclick="closeCalendarModal()" class="text-gray-500 hover:text-gray-800">
+                    <i class="ri-close-large-line"></i>
+                </button>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <button onclick="changeCalendarMonth(-1)" class="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    <i class="ri-arrow-left-long-line"></i>
+                </button>
+                <span id="calendarTitle" class="text-sm font-bold"></span>
+                <button onclick="changeCalendarMonth(1)" class="text-sm px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">
+                    <i class="ri-arrow-right-long-line"></i>
+                </button>
+            </div>
+            <div id="calendarGridWrapper" class="flex-1 overflow-auto">
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-sm text-gray-700"></div>
             </div>
         </div>
     </div>
