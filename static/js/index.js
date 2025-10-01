@@ -7,9 +7,11 @@ const inputDate = document.getElementById("workDate");
 const inputHours = document.getElementById("workHours");
 const inputMemo = document.getElementById("workMemo");
 const projectLogsDiv = document.getElementById("projectLogs");
+const footerToday = document.getElementById("footerToday");
 const settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
 
 
+let isTooltipFixed = false;
 let sortMode = false;
 let sortable = null;
 let editIndex = null;
@@ -32,12 +34,40 @@ window.addEventListener("load", () => {
     startFooterLoop();
 });
 
+// リサイズ時に固定ツールチップ再計算
+window.addEventListener("resize", () => {
+    if (isTooltipFixed) {
+        refreshTooltip();
+    }
+});
+
 // タイマー作動中のページ離脱警告
 window.addEventListener("beforeunload", (event) => {
     const [projectId] = Object.entries(activeTimers)[0] ?? [];
     if (projectId) {
         event.preventDefault();
         event.returnValue = "";
+    }
+});
+
+// ツールチップ表示
+footerToday.addEventListener("mouseenter", () => {
+    if (isTooltipFixed || footerToday._tooltip) return;
+    showTooltip(false);
+});
+
+// ツールチップ削除
+footerToday.addEventListener("mouseleave", () => {
+    if (isTooltipFixed) return;
+    removeTooltip();
+});
+
+// ツールチップ固定切替
+footerToday.addEventListener("click", () => {
+    if (!isTooltipFixed) {
+        showTooltip(true);
+    } else {
+        removeTooltip();
     }
 });
 
@@ -99,7 +129,9 @@ function saveLogs(triggerType = "manual") {
     localStorage.setItem("project_logs", JSON.stringify(logs));
     closeModal();
     renderLogs(triggerType);
+    refreshTooltip();
 }
+
 
 // 登録
 function submitLog() {
@@ -636,4 +668,75 @@ function startFooterLoop() {
         requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+}
+
+// 作業詳細ツールチップ
+function showTooltip(forceFixed = false) {
+    removeTooltip();
+    const today = getTodayDate();
+    const logsForToday = logs.filter(log => log.date === today);
+    if (logsForToday.length === 0) return;
+
+    const tooltip = document.createElement("div");
+    tooltip.classList.add("tooltip-fixed");
+    tooltip.className = `fixed z-50 bg-slate-100 border border-slate-400 text-base text-gray-800 p-3 rounded-md max-w-[70vw] space-y-1 shadow-2xl`;
+    // 作業記録一覧
+    logsForToday.forEach(log => {
+        const div = document.createElement("div");
+        div.className = "whitespace-nowrap overflow-hidden text-ellipsis";
+        div.innerHTML = `<strong>${log.project}</strong>：${log.hours}H - ${log.memo || ''}`;
+        tooltip.appendChild(div);
+    });
+    // ✖ボタン（固定モードのみ）
+    if (forceFixed) {
+        const closeBtn = document.createElement("button");
+        closeBtn.innerHTML = `<i class="ri-close-large-line"></i>`;
+        closeBtn.className = `
+            absolute -top-3 -right-3 bg-white border border-gray-300 rounded-full w-6 h-6 flex items-center justify-center
+            text-gray-500 hover:text-gray-800 shadow-md
+        `;
+        closeBtn.onclick = removeTooltip;
+        tooltip.appendChild(closeBtn);
+    }
+    document.body.appendChild(tooltip);
+
+    const rect = footerToday.getBoundingClientRect();
+    const padding = 25;
+
+    requestAnimationFrame(() => {
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let top = rect.top - tooltipRect.height - padding;
+        let left = rect.left;
+
+        if (left + tooltipRect.width > window.innerWidth) {
+            left = window.innerWidth - tooltipRect.width - padding;
+        }
+        if (top < 0) {
+            top = rect.bottom + padding;
+        }
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+
+        if (forceFixed) {
+            tooltip.classList.add("border-4", "border-indigo-700");
+            isTooltipFixed = true;
+        }
+        footerToday._tooltip = tooltip;
+    });
+}
+
+// ツールチップを削除
+function removeTooltip() {
+    if (footerToday._tooltip) {
+        footerToday._tooltip.remove();
+        footerToday._tooltip = null;
+    }
+    isTooltipFixed = false;
+}
+
+// ツールチップを更新
+function refreshTooltip() {
+    if (!isTooltipFixed) return;
+    removeTooltip();
+    showTooltip(true);
 }
