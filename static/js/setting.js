@@ -1,30 +1,28 @@
-const modal = document.getElementById("modal");
 const inputId = document.getElementById("projectId");
 const inputName = document.getElementById("projectName");
 const inputEstimate = document.getElementById("estimate");
 const inputDue = document.getElementById("dueDate");
-const list = document.getElementById("projectList");
-const scrollBtn = document.getElementById("scrollTopBtn");
+const projectListDiv = document.getElementById("projectList");
 
-let settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
+
 let selectedProjectId = null;
+let settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
 
 
-// スクロールボタン
-window.addEventListener("scroll", () => {
-    if (window.scrollY > 300) {
-        scrollBtn.classList.remove("opacity-0", "pointer-events-none");
-        scrollBtn.classList.add("opacity-100");
-    } else {
-        scrollBtn.classList.add("opacity-0", "pointer-events-none");
-        scrollBtn.classList.remove("opacity-100");
-    }
+// ===================================
+// --- Window ------------------------
+// ===================================
+
+// 初期化（load時）
+window.addEventListener("load", () => {
+    renderList();
+    showStorageUsage();
 });
 
-scrollBtn.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-});
 
+// ===================================
+// --- Modal -------------------------
+// ===================================
 
 // モーダル関数(開く)
 function openModal() {
@@ -35,31 +33,32 @@ function openModal() {
     inputDue.value = "";
 }
 
-
 // モーダル関数(閉じる)
 function closeModal() {
     modal.classList.add("hidden");
 }
 
 
-// 保存関数
+// ===================================
+// --- Main --------------------------
+// ===================================
+
+// 保存
 function saveSettings() {
     localStorage.setItem("project_settings", JSON.stringify(settings));
-    renderList();
     closeModal();
+    renderList();
     showStorageUsage();
 }
 
-
-// 登録関数
-function addProject() {
+// 登録
+function submitProject() {
     const id = inputId.value.trim();
     const name = inputName.value.trim();
     const estimate = inputEstimate.value ? Number(inputEstimate.value) : null;
     const due = inputDue.value || null;
     if (!id) {
-        alert("必須項目を入力してください。");
-        return;
+        return alert("必須項目を入力してください。");
     }
 
     // 編集時にIDが変更されたら旧データ削除
@@ -77,12 +76,10 @@ function addProject() {
     saveSettings();
 }
 
-
-// 編集関数
+// 編集
 function editProject(id) {
     const p = settings.find(p => p.id === id);
     if (!p) return;
-
     inputId.value = p.id;
     inputName.value = p.name;
     inputEstimate.value = p.estimate;
@@ -97,7 +94,7 @@ function editSelected() {
 }
 
 
-// 削除関数
+// 削除
 function deleteProject(id) {
     if (!confirm(`${id} を削除しますか？`)) return;
     settings = settings.filter(p => p.id !== id);
@@ -109,16 +106,35 @@ function deleteSelected() {
     deleteProject(selectedProjectId);
 }
 
+// 選択
+function selectProject(id) {
+    document.querySelectorAll('input[name="projectSelect"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest(".project-item")?.classList.remove("bg-blue-100");
+    });
 
-// 表示関数
+    const checkbox = document.getElementById(`select-${id}`);
+    const wrapper = checkbox.closest(".project-item");
+
+    if (selectedProjectId === id) {
+        selectedProjectId = null;
+    } else {
+        checkbox.checked = true;
+        selectedProjectId = id;
+        wrapper?.classList.add("bg-blue-100");
+    }
+    updateButtons("btnEdit", "btnDelete", selectedProjectId !== null);
+}
+
+// 表示
 function renderList() {
-    list.innerHTML = "";
+    projectListDiv.innerHTML = "";
     selectedProjectId = null;
-    updateActionButtons();
+    updateButtons("btnEdit", "btnDelete", selectedProjectId !== null);
 
     settings.forEach(p => {
         const div = document.createElement("div");
-        div.className = "project-item bg-white shadow px-4 py-2 flex justify-between items-center rounded-xl";
+        div.className = "project-item bg-white shadow px-4 py-2 flex justify-between items-center rounded-md";
 
         div.innerHTML = `
         <div class="flex items-center gap-3">
@@ -147,43 +163,16 @@ function renderList() {
             </div>
         </div>
         `;
-        list.appendChild(div);
+        projectListDiv.appendChild(div);
     });
 }
 
 
-// 選択関数
-function selectProject(id) {
-    document.querySelectorAll('input[name="projectSelect"]').forEach(cb => {
-        cb.checked = false;
-        cb.closest(".project-item")?.classList.remove("bg-blue-100");
-    });
+// ===================================
+// --- Footer ------------------------
+// ===================================
 
-    const checkbox = document.getElementById(`select-${id}`);
-    const wrapper = checkbox.closest(".project-item");
-
-    if (selectedProjectId === id) {
-        selectedProjectId = null;
-    } else {
-        checkbox.checked = true;
-        selectedProjectId = id;
-        wrapper?.classList.add("bg-blue-100");
-    }
-    updateActionButtons();
-}
-
-
-// 選択・ボタンの状態更新関数
-function updateActionButtons() {
-    const editBtn = document.getElementById("btnEdit");
-    const deleteBtn = document.getElementById("btnDelete");
-    const hasSelection = selectedProjectId !== null;
-    editBtn.disabled = !hasSelection;
-    deleteBtn.disabled = !hasSelection;
-}
-
-
-// エクスポート関数
+// エクスポート
 function exportData() {
     const data = {
         project_settings: settings,
@@ -201,8 +190,7 @@ function exportData() {
     URL.revokeObjectURL(url);
 }
 
-
-// インポート関数
+// インポート
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -234,8 +222,7 @@ function importData(event) {
     reader.readAsText(file, "utf-8");
 }
 
-
-// エクスポート＆アプリ初期化関数
+// エクスポート＆アプリ初期化
 function resetAppData() {
     if (!confirm("データをエクスポートしてからアプリを初期化します。続行しますか？")) return;
 
@@ -265,7 +252,6 @@ function resetAppData() {
     location.reload();
 }
 
-
 // ローカルストレージの使用容量を取得
 function getLocalStorageUsage() {
     let total = 0;
@@ -278,7 +264,6 @@ function getLocalStorageUsage() {
     // バイト → KB に変換（1文字 ≒ 1バイト）
     return (total / 1024).toFixed(2);
 }
-
 
 // ローカルストレージの使用容量を表示
 function showStorageUsage() {
@@ -302,10 +287,3 @@ function showStorageUsage() {
     bar.style.width = `${Math.min(percent, 100)}%`;
     text.textContent = `${usageMB} MB / 5.0 MB（ ${percent}% ）使用中`;
 }
-
-
-window.addEventListener("load", () => {
-    showStorageUsage();
-});
-
-renderList();

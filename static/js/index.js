@@ -1,35 +1,72 @@
+const now = new Date();
 const openedProjects = {};
-const modal = document.getElementById("modal");
+const expandedMonthLogs = {};
+const selectedMonthByProject = {};
+const modalTitle = document.getElementById("modalTitle");
+const inputDate = document.getElementById("workDate");
+const inputHours = document.getElementById("workHours");
+const inputMemo = document.getElementById("workMemo");
 const projectLogsDiv = document.getElementById("projectLogs");
 const settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
-const scrollBtn = document.getElementById("scrollTopBtn");
 
-let logs = JSON.parse(localStorage.getItem("project_logs") || "[]");
-let sortable = null;
+
 let sortMode = false;
+let sortable = null;
 let editIndex = null;
 let activeProject = null;
 let selectedLogIndex = null;
 let activeTimers = {};
+let calendarYear = now.getFullYear();
+let calendarMonth = now.getMonth() + 1;
+let logs = JSON.parse(localStorage.getItem("project_logs") || "[]");
 
 
-// スクロールボタン
-window.addEventListener("scroll", () => {
-    if (window.scrollY > 300) {
-        scrollBtn.classList.remove("opacity-0", "pointer-events-none");
-        scrollBtn.classList.add("opacity-100");
-    } else {
-        scrollBtn.classList.add("opacity-0", "pointer-events-none");
-        scrollBtn.classList.remove("opacity-100");
+// ===================================
+// --- Window ------------------------
+// ===================================
+
+// 初期化（load時）
+window.addEventListener("load", () => {
+    renderLogs();
+    updateFooter();
+    startFooterLoop();
+});
+
+// タイマー作動中のページ離脱警告
+window.addEventListener("beforeunload", (event) => {
+    const [projectId] = Object.entries(activeTimers)[0] ?? [];
+    if (projectId) {
+        event.preventDefault();
+        event.returnValue = "";
     }
 });
 
-scrollBtn.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-});
 
+// ===================================
+// --- Modal -------------------------
+// ===================================
 
-// 登録した作業内容を取得
+// モーダル関数(開く)
+function openModal(projectId) {
+    modalTitle.textContent = `Work Record - ${projectId}`;
+    editIndex = null;
+    activeProject = projectId;
+    selectedProjectId = projectId;
+    inputDate.value = getTodayDate();
+    inputHours.value = "";
+    inputMemo.value = "";
+    updateWorkMemoSuggestions();
+    modal.classList.remove("hidden");
+    }
+
+// モーダル関数(閉じる)
+function closeModal() {
+    modal.classList.add("hidden");
+    editIndex = null;
+    activeProject = null;
+}
+
+// 入力候補を取得
 function updateWorkMemoSuggestions() {
     const datalist = document.getElementById("workMemoSuggestions");
     datalist.innerHTML = "";
@@ -53,77 +90,25 @@ function updateWorkMemoSuggestions() {
 }
 
 
-// モーダル関数(開く)
-function openModal(projectId) {
-    document.getElementById("modalTitle").textContent = `Work Record - ${projectId}`;
-    activeProject = projectId;
-    selectedProjectId = projectId;
-    editIndex = null;
-    document.getElementById("workDate").value = getTodayDate();
-    document.getElementById("workHours").value = "";
-    document.getElementById("workMemo").value = "";
-    updateWorkMemoSuggestions();
-    modal.classList.remove("hidden");
-}
+// ===================================
+// --- Main --------------------------
+// ===================================
 
-
-// モーダル関数(閉じる)
-function closeModal() {
-    modal.classList.add("hidden");
-    activeProject = null;
-    editIndex = null;
-    document.getElementById("workDate").value = "";
-    document.getElementById("workHours").value = "";
-    document.getElementById("workMemo").value = "";
-}
-
-
-// 詳細表示関数
-function toggleDetail(projectId) {
-    openedProjects[projectId] = !openedProjects[projectId];
-
-    // 再選択のために選択中のログ情報を保存
-    const selectedLog = logs[selectedLogIndex];
-    const selectedLogKey = selectedLog
-    ? `${selectedLog.project}|${selectedLog.date}|${selectedLog.hours}|${selectedLog.memo}`
-    : null;
-
-    renderLogs();
-
-    // 再描画後、同じログがまだ存在していたら再チェック
-    if (selectedLogKey && selectedLog?.project !== projectId) {
-        const index = logs.findIndex(log =>
-            `${log.project}|${log.date}|${log.hours}|${log.memo}` === selectedLogKey
-        );
-        if (index !== -1) {
-            const checkbox = document.getElementById(`log-${index}`);
-            if (checkbox) {
-                checkbox.checked = true;
-                checkbox.closest(".log-row")?.classList.add("bg-blue-100");
-                selectedLogIndex = index;
-                updateActionButtons();
-            }
-        } else {
-            selectedLogIndex = null;
-            updateActionButtons();
-        }
-    }
-}
-
-
-// 保存関数
-function saveLogs() {
+// 保存
+function saveLogs(triggerType = "manual") {
     localStorage.setItem("project_logs", JSON.stringify(logs));
-    renderLogs();
+    closeModal();
+    renderLogs(triggerType);
 }
 
-
-// 登録関数
+// 登録
 function submitLog() {
-    const date = document.getElementById("workDate").value;
-    const hours = parseFloat(document.getElementById("workHours").value);
-    const memo = document.getElementById("workMemo").value;
-    if (!activeProject || !date || isNaN(hours)) return alert("必須項目を入力してください。");
+    const date = inputDate.value;
+    const hours = parseFloat(inputHours.value);
+    const memo = inputMemo.value;
+    if (!activeProject || !date || isNaN(hours)) {
+        return alert("必須項目を入力してください。");
+    }
 
     const newEntry = { project: activeProject, date, hours, memo };
     if (editIndex !== null) {
@@ -131,38 +116,88 @@ function submitLog() {
     } else {
         logs.push(newEntry);
     }
-    closeModal();
-    saveLogs();
+    saveLogs("submitLog");
 }
 
-
-// 編集関数
+// 編集
 function editLog(index) {
     const log = logs[index];
     if (!log) return;
-    activeProject = log.project;
     editIndex = index;
-    document.getElementById("workDate").value = log.date;
-    document.getElementById("workHours").value = log.hours;
-    document.getElementById("workMemo").value = log.memo;
+    activeProject = log.project;
+    inputDate.value = log.date;
+    inputHours.value = log.hours;
+    inputMemo.value = log.memo;
     updateWorkMemoSuggestions();
     modal.classList.remove("hidden");
 }
 
 function editSelectedLog() {
-    if (selectedLogIndex !== null) editLog(selectedLogIndex);
+    if (selectedLogIndex === null) return;
+    editLog(selectedLogIndex);
 }
 
-
-// 削除関数
+// 削除
 function deleteLog(index) {
     if (!confirm("この作業記録を削除しますか？")) return;
     logs.splice(index, 1);
-    saveLogs();
+    saveLogs("deleteLog");
 }
 
 function deleteSelectedLog() {
-    if (selectedLogIndex !== null) deleteLog(selectedLogIndex);
+    if (selectedLogIndex === null) return;
+    deleteLog(selectedLogIndex);
+}
+
+// 選択
+function selectLog(index) {
+    document.querySelectorAll('input[name="logSelect"]').forEach(el => {
+        el.checked = false;
+        el.closest(".log-row")?.classList.remove("bg-blue-100");
+    });
+
+    const checkbox = document.getElementById(`log-${index}`);
+    const row = checkbox.closest(".log-row");
+
+    if (selectedLogIndex === index) {
+        selectedLogIndex = null;
+    } else {
+        checkbox.checked = true;
+        selectedLogIndex = index;
+        row?.classList.add("bg-blue-100");
+    }
+    updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
+}
+
+// 並び替え
+function toggleSortMode() {
+    sortMode = !sortMode;
+
+    const btn = document.getElementById("sortModeBtn");
+    const icon = document.getElementById("sortModeIcon");
+
+    if (sortMode) {
+        btn.classList.remove("bg-slate-500", "hover:bg-slate-600", "text-white");
+        btn.classList.add("bg-sky-500", "hover:bg-sky-600", "ring-2", "ring-offset-1", "ring-sky-400", "shadow-inner", "text-white");
+        icon.className = "ri-checkbox-line";
+
+        sortable = new Sortable(document.getElementById("projectLogs"), {
+            animation: 150,
+            handle: ".log-wrapper",
+            onEnd: () => {
+                const newOrder = Array.from(document.querySelectorAll("#projectLogs .log-wrapper")).map(div => div.dataset.id);
+                settings.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+                localStorage.setItem("project_settings", JSON.stringify(settings));
+                renderLogs();
+            }
+        });
+    } else {
+        btn.classList.remove("bg-sky-500", "hover:bg-sky-600", "ring-2", "ring-offset-1", "ring-sky-400", "shadow-inner");
+        btn.classList.add("bg-slate-500", "hover:bg-slate-600", "text-white");
+        icon.className = "ri-list-settings-line";
+
+        if (sortable) sortable.destroy();
+        renderLogs();
 }
 
 
@@ -268,98 +303,19 @@ function renderLogs() {
 }
 
 
-// 選択関数
-function selectLog(index) {
-    document.querySelectorAll('input[name="logSelect"]').forEach(el => {
-        el.checked = false;
-        el.closest(".log-row")?.classList.remove("bg-blue-100");
-    });
+// ===================================
+// --- Timer -------------------------
+// ===================================
 
-    const checkbox = document.getElementById(`log-${index}`);
-    const row = checkbox.closest(".log-row");
-
-    if (selectedLogIndex === index) {
-        selectedLogIndex = null;
-    } else {
-        checkbox.checked = true;
-        selectedLogIndex = index;
-        row?.classList.add("bg-blue-100");
-    }
-    updateActionButtons();
-}
-
-
-// 選択・ボタンの状態更新関数
-function updateActionButtons() {
-    const editBtn = document.getElementById("btnEdit");
-    const deleteBtn = document.getElementById("btnDelete");
-    const hasSelection = selectedLogIndex !== null;
-    editBtn.disabled = !hasSelection;
-    deleteBtn.disabled = !hasSelection;
-}
-
-
-// 並び替え関数
-function toggleSortMode() {
-    sortMode = !sortMode;
-
-    const btn = document.getElementById("sortModeBtn");
-    const icon = document.getElementById("sortModeIcon");
-
-    if (sortMode) {
-        btn.classList.remove("bg-slate-500", "hover:bg-slate-600", "text-white");
-        btn.classList.add("bg-sky-500", "hover:bg-sky-600", "ring-2", "ring-offset-1", "ring-sky-400", "shadow-inner", "text-white");
-        icon.className = "ri-checkbox-line";
-
-        sortable = new Sortable(document.getElementById("projectLogs"), {
-            animation: 150,
-            handle: ".log-wrapper",
-            onEnd: () => {
-                const newOrder = Array.from(document.querySelectorAll("#projectLogs .log-wrapper")).map(div => div.dataset.id);
-                settings.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
-                localStorage.setItem("project_settings", JSON.stringify(settings));
-                renderLogs();
-            }
-        });
-    } else {
-        btn.classList.remove("bg-sky-500", "hover:bg-sky-600", "ring-2", "ring-offset-1", "ring-sky-400", "shadow-inner");
-        btn.classList.add("bg-slate-500", "hover:bg-slate-600", "text-white");
-        icon.className = "ri-list-settings-line";
-
-        if (sortable) sortable.destroy();
-        renderLogs();
-    }
-}
-
-
-// 現在の日付（YYYY-MM-DD）
-function getTodayDate() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-
-// 本日の合計作業時間を取得
-function getTodayTotalHours() {
-    const today = getTodayDate();
-    return logs.filter(l => l.date === today).reduce((sum, l) => sum + l.hours, 0);
-}
-
-
-// 指定されたプロジェクトの自動タイマーを切り替える
+// タイマー切替
 function toggleTimer(projectId) {
     const now = new Date();
-    const today = getTodayDate();
 
     // すでに他で計測中なら停止して切り替え
     const currentActive = Object.keys(activeTimers)[0];
     if (currentActive && currentActive !== projectId) {
         stopTimer(currentActive);
     }
-
     if (activeTimers[projectId]) {
         stopTimer(projectId);
     } else {
@@ -369,6 +325,17 @@ function toggleTimer(projectId) {
     renderLogs();
 }
 
+// 記録表示切替
+function toggleDetail(projectId) {
+    const wasOpen = openedProjects[projectId];
+    openedProjects[projectId] = !wasOpen;
+
+    if (!openedProjects[projectId]) {
+        delete expandedMonthLogs[projectId];
+        delete selectedMonthByProject[projectId];
+    }
+    renderLogs();
+}
 
 // プロジェクトの計測終了し、logに記録する
 function stopTimer(projectId) {
@@ -380,28 +347,46 @@ function stopTimer(projectId) {
     if (diffMinutes < 1) {
         delete activeTimers[projectId];
         updateFooter();
-        renderLogs();
+        renderLogs("stopTimer");
         return alert("1分未満の記録は無視されます。");
     }
 
+    // 既存ログに同じ日＆プロジェクト＆メモ("Auto Timer")があるか探す
     const hours = +(diffMinutes / 60).toFixed(2);
     const today = getTodayDate();
-
-    // 既存ログに同じ日＆プロジェクト＆メモ("Auto Timer")があるか探す
     const existing = logs.find(l => l.project === projectId && l.date === today && l.memo === "Auto Timer");
-
     if (existing) {
         // 合算して小数第2位まで
         existing.hours = +(existing.hours + hours).toFixed(2);
     } else {
         logs.push({ project: projectId, date: today, hours, memo: "Auto Timer" });
     }
-    saveLogs();
+    saveLogs("stopTimer");
     delete activeTimers[projectId];
     updateFooter();
-    renderLogs();
 }
 
+
+// ===================================
+
+// ===================================
+// --- Footer ------------------------
+// ===================================
+
+// 現在の日付（YYYY-MM-DD）
+function getTodayDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// 本日の合計作業時間を取得
+function getTodayTotalHours() {
+    const today = getTodayDate();
+    return logs.filter(l => l.date === today).reduce((sum, l) => sum + l.hours, 0);
+}
 
 // フッター表示更新
 function updateFooter() {
@@ -427,17 +412,6 @@ function updateFooter() {
     footer.classList.remove("hidden");
 }
 
-
-// タイマー作動中のページ離脱警告
-window.addEventListener("beforeunload", (event) => {
-    const [projectId] = Object.entries(activeTimers)[0] ?? [];
-    if (projectId) {
-        event.preventDefault();
-        event.returnValue = "";
-    }
-});
-
-
 // フッターの自動更新ループ
 function startFooterLoop() {
     let lastSecond = null;
@@ -453,13 +427,3 @@ function startFooterLoop() {
     }
     requestAnimationFrame(tick);
 }
-
-
-// 初期化（load時）
-window.addEventListener("load", () => {
-    updateFooter();
-    startFooterLoop();
-});
-
-
-renderLogs();
