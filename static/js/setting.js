@@ -4,7 +4,6 @@ const inputEstimate = document.getElementById("estimate");
 const inputDue = document.getElementById("dueDate");
 const projectListDiv = document.getElementById("projectList");
 
-
 let selectedProjectId = null;
 let settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
 
@@ -80,6 +79,7 @@ function submitProject() {
 function editProject(id) {
     const p = settings.find(p => p.id === id);
     if (!p) return;
+
     inputId.value = p.id;
     inputName.value = p.name;
     inputEstimate.value = p.estimate;
@@ -90,6 +90,7 @@ function editProject(id) {
 
 function editSelected() {
     if (!selectedProjectId) return;
+
     editProject(selectedProjectId);
 }
 
@@ -97,12 +98,14 @@ function editSelected() {
 // 削除
 function deleteProject(id) {
     if (!confirm(`${id} を削除しますか？`)) return;
+
     settings = settings.filter(p => p.id !== id);
     saveSettings();
 }
 
 function deleteSelected() {
     if (!selectedProjectId) return;
+
     deleteProject(selectedProjectId);
 }
 
@@ -142,7 +145,9 @@ function renderList() {
             <div>
                 <p class="font-bold text-gray-800 text-lg">
                     ${p.id}
-                    <span class='text-sm text-gray-500 ml-2'>${p.name ?? ''}</span>
+                    <span class='text-sm text-gray-500 ml-2'>
+                        ${p.name ?? ''}
+                    </span>
                 </p>
                 <div class="flex justify-between items-center mt-1">
                     <div class="flex gap-2 items-center text-sm text-gray-600">
@@ -156,7 +161,9 @@ function renderList() {
                             <span class="text-xs text-white px-2 py-0.5 rounded ${p.due ? 'bg-green-500' : 'bg-gray-500'}">
                                 納期
                             </span>
-                            <span>${p.due ?? " ー "}</span>
+                            <span>
+                                ${p.due ?? " ー "}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -194,6 +201,7 @@ function exportData() {
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         try {

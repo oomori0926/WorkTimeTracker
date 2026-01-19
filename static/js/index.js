@@ -53,12 +53,14 @@ window.addEventListener("beforeunload", (event) => {
 // ツールチップ表示
 footerToday.addEventListener("mouseenter", () => {
     if (isTooltipFixed || footerToday._tooltip) return;
+
     showTooltip(false);
 });
 
 // ツールチップ削除
 footerToday.addEventListener("mouseleave", () => {
     if (isTooltipFixed) return;
+
     removeTooltip();
 });
 
@@ -155,6 +157,7 @@ function submitLog() {
 function editLog(index) {
     const log = logs[index];
     if (!log) return;
+
     editIndex = index;
     activeProject = log.project;
     inputDate.value = log.date;
@@ -166,18 +169,21 @@ function editLog(index) {
 
 function editSelectedLog() {
     if (selectedLogIndex === null) return;
+
     editLog(selectedLogIndex);
 }
 
 // 削除
 function deleteLog(index) {
     if (!confirm("この作業記録を削除しますか？")) return;
+
     logs.splice(index, 1);
     saveLogs("deleteLog");
 }
 
 function deleteSelectedLog() {
     if (selectedLogIndex === null) return;
+
     deleteLog(selectedLogIndex);
 }
 
@@ -737,6 +743,7 @@ function removeTooltip() {
 // ツールチップを更新
 function refreshTooltip() {
     if (!isTooltipFixed) return;
+
     removeTooltip();
     showTooltip(true);
 }
