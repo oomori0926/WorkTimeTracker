@@ -183,7 +183,8 @@ function renderList() {
 function exportData() {
     const data = {
         project_settings: settings,
-        project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]")
+        project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]"),
+        project_groups: JSON.parse(localStorage.getItem("project_groups") || "null")
     };
     const blob = new Blob(
         [JSON.stringify(data, null, 2)],
@@ -220,10 +221,20 @@ function importData(event) {
             // ログがある場合は復元
             if (data.project_logs) {
                 localStorage.setItem("project_logs", JSON.stringify(data.project_logs));
+            } else {
+                localStorage.removeItem("project_logs");
+            }
+            // フォルダー構成（グループ）がある場合は復元
+            if (data.project_groups) {
+                localStorage.setItem("project_groups", JSON.stringify(data.project_groups));
+            } else {
+                // キーが無い古いバックアップでもエラーにはしない
+                localStorage.removeItem("project_groups");
             }
             alert("復元が完了しました！");
             location.reload();
         } catch (err) {
+            console.error(err);
             alert("ファイルの読み込みに失敗しました。");
         }
     };
@@ -237,19 +248,21 @@ function resetAppData() {
     // エクスポート
     const data = {
         project_settings: JSON.parse(localStorage.getItem("project_settings") || "[]"),
-        project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]")
+        project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]"),
+        project_groups: JSON.parse(localStorage.getItem("project_groups") || "null")
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `project_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `project_backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
 
     // このアプリのデータだけ削除
     localStorage.removeItem("project_settings");
     localStorage.removeItem("project_logs");
+    localStorage.removeItem("project_groups");
     // このアプリのキャッシュだけ削除
     caches.keys().then(keys => {
         const scopePrefix = `${location.origin}/WorkTimeTracker`;
