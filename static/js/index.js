@@ -212,16 +212,17 @@ function selectLog(index) {
     });
 
     const checkbox = document.getElementById(`log-${index}`);
-    const row = checkbox.closest(".log-row");
+    const row = checkbox?.closest(".log-row");
 
     if (selectedLogIndex === index) {
         selectedLogIndex = null;
     } else {
-        checkbox.checked = true;
+        if (checkbox) checkbox.checked = true;
         selectedLogIndex = index;
-        row?.classList.add("bg-blue-100");
+        row?.classList.add('bg-blue-100');
     }
     updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
+    syncSelectionToTooltip();
 }
 
 // 並び替え
@@ -384,7 +385,7 @@ function toggleFolderOpen(id) {
 }
 
 
-// ===== DnDユーティリティ =====
+// DnDユーティリティ
 function lockDragSize(el) {
     if (!el) return;
 
@@ -845,10 +846,14 @@ function buildProjectCard(project, triggerType = "manual") {
 
 
 // 全体ラッパー描画
-function renderLogs(triggerType = "manual") {
+function renderLogs(triggerType = "manual", options = {}) {
+    const { preserveSelection = false } = options;
     projectLogsDiv.innerHTML = "";
-    selectedLogIndex = null;
-    updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
+    if (!preserveSelection) {
+        clearSelection();
+    } else {
+        updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
+    }
 
     // 未所属（非グループ）を常に表示
     const ungroupedIds = getUngroupedProjectIds();
@@ -960,6 +965,8 @@ function renderLogs(triggerType = "manual") {
     }
     setupSortables();
     updateFolderCounts();
+    syncSelectionToList();
+    syncSelectionToTooltip();
 }
 
 
@@ -1138,7 +1145,7 @@ function renderCalendarGrid() {
         if (detailText && isCurrentMonth) {
             cell.addEventListener("mouseenter", () => {
                 const tooltip = document.createElement("div");
-                tooltip.className = "fixed z-50 bg-white border text-xs p-2 shadow whitespace-nowrap max-w-[300px]";
+                tooltip.className = "fixed z-[70] bg-white border text-xs p-2 shadow whitespace-nowrap max-w-[300px]";
                 tooltip.innerHTML = detailText;
                 document.body.appendChild(tooltip);
 
@@ -1226,32 +1233,102 @@ function startFooterLoop() {
     requestAnimationFrame(tick);
 }
 
-// 作業詳細ツールチップ
+
+// リスト側UI（checkboxと行ハイライト）へ選択を反映
+function syncSelectionToList() {
+    document.querySelectorAll('input[name="logSelect"]').forEach(el => { el.checked = false; });
+    document.querySelectorAll('.log-row').forEach(row => row.classList.remove('bg-blue-100'));
+
+    if (selectedLogIndex === null) return;
+
+    // 表示されている明細内に該当チェックボックスがあれば同期
+    const cb = document.getElementById(`log-${selectedLogIndex}`);
+    if (cb) {
+        cb.checked = true;
+        cb.closest('.log-row')?.classList.add('bg-blue-100');
+    }
+}
+
+// ツールチップ側UI（行ハイライト）へ選択を反映
+function syncSelectionToTooltip() {
+    const rows = document.querySelectorAll('.tt-log-row');
+    rows.forEach(r => r.classList.remove('selected', 'bg-blue-100'));
+
+    if (selectedLogIndex === null) return;
+
+    const target = Array.from(rows).find(r => Number(r.dataset.index) === selectedLogIndex);
+    if (target) target.classList.add('selected', 'bg-blue-100');
+}
+
+
+// 選択状態をクリア
+function clearSelection() {
+    selectedLogIndex = null;
+    updateButtons("btnEdit", "btnDelete", false);
+    document.querySelectorAll('.tt-log-row.selected').forEach(el => el.classList.remove('selected', 'bg-blue-100'));
+    document.querySelectorAll('input[name="logSelect"]').forEach(el => { el.checked = false; });
+    document.querySelectorAll('.log-row').forEach(row => row.classList.remove('bg-blue-100'));
+}
+
+
+// ツールチップ行の選択トグル
+function selectLogFromTooltip(index, rowEl) {
+    // すでに同じ行を選んでいたら解除
+    if (selectedLogIndex === index) {
+        clearSelection();
+        return;
+    }
+
+    // ツールチップ側のハイライトを一旦クリア
+    document.querySelectorAll('.tt-log-row.selected').forEach(el => el.classList.remove('selected', 'bg-blue-100'));
+    // 選択更新 & ツールチップ側の可視化
+    selectedLogIndex = index;
+    if (rowEl) rowEl.classList.add('selected', 'bg-blue-100');
+    updateButtons("btnEdit", "btnDelete", true);
+    syncSelectionToList();
+}
+
+
+// 今日の作業ツールチップ
 function showTooltip(forceFixed = false) {
-    removeTooltip();
+    removeTooltip(/* shouldClearSelection */ false);
     const today = getTodayDate();
-    const logsForToday = logs.filter(log => log.date === today);
-    if (logsForToday.length === 0) return;
+    const logsForTodayWithIndex = logs.map((log, idx) => ({ ...log, __idx: idx })).filter(l => l.date === today);
+
+    if (logsForTodayWithIndex.length === 0) return;
 
     const tooltip = document.createElement("div");
     tooltip.classList.add("tooltip-fixed");
-    tooltip.className = `fixed z-50 bg-slate-100 border border-slate-400 text-base text-gray-800 p-3 rounded-md max-w-[70vw] space-y-1 shadow-2xl`;
-    // 作業記録一覧
-    logsForToday.forEach(log => {
-        const div = document.createElement("div");
-        div.className = "whitespace-nowrap overflow-hidden text-ellipsis";
-        div.innerHTML = `<strong>${log.project}</strong>：${log.hours}H - ${log.memo || ''}`;
-        tooltip.appendChild(div);
+    tooltip.className = `fixed z-50 bg-slate-100 border border-slate-400 text-base text-gray-800 p-3 rounded-md max-w-[70vw] space-y-2 shadow-2xl`;
+    // ヘッダー
+    const header = document.createElement('div');
+    header.className = "text-sm font-bold text-gray-700";
+    header.textContent = `今日の作業 (${today})`;
+    tooltip.appendChild(header);
+    // リスト
+    const list = document.createElement('div');
+    list.className = "space-y-1";
+    logsForTodayWithIndex.forEach(item => {
+        const row = document.createElement('div');
+        row.className = `tt-log-row whitespace-nowrap overflow-hidden text-ellipsis flex items-center justify-between gap-3 px-2 py-1 rounded cursor-pointer hover:bg-blue-50`;
+        row.dataset.index = String(item.__idx);
+
+        const content = document.createElement('div');
+        content.className = "min-w-0";
+        content.innerHTML = `<strong class="text-gray-900">${item.project}</strong>
+                            ：${(+item.hours).toFixed(2)}H
+                            <span class="text-gray-600">${item.memo ? ' - ' + item.memo : ''}</span>`;
+        row.addEventListener('click', () => selectLogFromTooltip(item.__idx, row));
+        row.appendChild(content);
+        list.appendChild(row);
     });
+    tooltip.appendChild(list);
     // ✖ボタン（固定モードのみ）
     if (forceFixed) {
         const closeBtn = document.createElement("button");
         closeBtn.innerHTML = `<i class="ri-close-large-line"></i>`;
-        closeBtn.className = `
-            absolute -top-3 -right-3 bg-white border border-gray-300 rounded-full w-6 h-6 flex items-center justify-center
-            text-gray-500 hover:text-gray-800 shadow-md
-        `;
-        closeBtn.onclick = removeTooltip;
+        closeBtn.className = `absolute -top-5 -right-3 bg-white border border-gray-300 rounded-full w-6 h-6 flex items-center justify-center text-gray-500 hover:text-gray-800 shadow-md`;
+        closeBtn.onclick = () => removeTooltip(true);
         tooltip.appendChild(closeBtn);
     }
     document.body.appendChild(tooltip);
@@ -1278,16 +1355,21 @@ function showTooltip(forceFixed = false) {
             isTooltipFixed = true;
         }
         footerToday._tooltip = tooltip;
+        syncSelectionToTooltip();
     });
 }
 
 // ツールチップを削除
-function removeTooltip() {
+function removeTooltip(shouldClearSelection = false) {
     if (footerToday._tooltip) {
         footerToday._tooltip.remove();
         footerToday._tooltip = null;
     }
     isTooltipFixed = false;
+
+    if (shouldClearSelection) {
+        clearSelection();
+    }
 }
 
 // ツールチップを更新
