@@ -39,6 +39,9 @@
             <button id="sortModeBtn" onclick="toggleSortMode()" class="bg-slate-500 hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded-md transition-all duration-200 flex items-center gap-1">
                 <i id="sortModeIcon" class="ri-list-settings-line"></i> Reorder
             </button>
+            <button id="addFolderBtn" class="bg-slate-500 enabled:hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded-md disabled:opacity-50" onclick="promptCreateFolder()" disabled>
+                <i class="ri-folder-add-line"></i> Folder
+            </button>
             <button id="btnEdit" class="bg-indigo-500 enabled:hover:bg-indigo-600 text-white text-sm px-5 py-1.5 rounded-md disabled:opacity-50" onclick="editSelectedLog()" disabled>
                 <i class="ri-edit-2-fill"></i> Edit
             </button>
