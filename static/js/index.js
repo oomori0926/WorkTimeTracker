@@ -248,13 +248,21 @@ function toggleSortMode() {
 
 
 function teardownSortables() {
-    if (sortableGroups) { sortableGroups.destroy(); sortableGroups = null; }
-    if (sortableUngrouped) { sortableUngrouped.destroy(); sortableUngrouped = null; }
+    if (sortableGroups) {
+        sortableGroups.destroy(); sortableGroups = null;
+    }
+    if (sortableUngrouped) {
+        sortableUngrouped.destroy(); sortableUngrouped = null;
+    }
     Object.values(sortableInGroups).forEach(inst => inst?.destroy());
     for (const k in sortableInGroups) delete sortableInGroups[k];
+
     Object.values(sortableHeaderDrops).forEach(inst => inst?.destroy());
     for (const k in sortableHeaderDrops) delete sortableHeaderDrops[k];
-    if (sortableCatchAll) { sortableCatchAll.destroy(); sortableCatchAll = null; }
+
+    if (sortableCatchAll) {
+        sortableCatchAll.destroy(); sortableCatchAll = null;
+    }
 }
 
 
