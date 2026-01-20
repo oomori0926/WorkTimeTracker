@@ -273,7 +273,7 @@ function moveProjectToFolderTop(projectId, gid) {
         ];
     } else {
         // 未所属へ戻す
-        projectGroups.ungroupedOrder.unshift(projectId);
+        projectGroups.ungroupedOrder.push(projectId);
     }
     saveProjectGroups();
 }
