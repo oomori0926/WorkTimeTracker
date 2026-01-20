@@ -14,13 +14,10 @@ const urlsToCache = [
 // キャッシュの追加
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        // キャッシュを開く
         caches.open(CACHE_NAME).then((cache) => {
-            // 指定されたリソースをキャッシュに追加
             return cache.addAll(urlsToCache);
         })
     );
-    //インストール時にすぐに待機からアクティブに変更
     event.waitUntil(self.skipWaiting());
 });
 
@@ -30,25 +27,21 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return cacheNames.filter((cacheName) => {
-                // このスコープに所属且つCACHE_NAMEではないキャッシュを探す
                 return cacheName.startsWith(`${registration.scope}!`) &&
                 cacheName !== CACHE_NAME;
             });
         }).then((cachesToDelete) => {
             return Promise.all(cachesToDelete.map((cacheName) => {
-                // 古いキャッシュを削除する
                 return caches.delete(cacheName);
             }));
         })
     );
-    //既に読み込まれているサイトも制御対象にする
     event.waitUntil(self.clients.claim());
 });
 
 
 // リクエスト応答
 self.addEventListener('fetch', (event) => {
-    // 無効なスキームのリクエストは無視
     if (!event.request.url.startsWith('http')) return;
 
     event.respondWith(

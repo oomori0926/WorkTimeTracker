@@ -64,7 +64,6 @@ function submitProject() {
     if (selectedProjectId && selectedProjectId !== id) {
         settings = settings.filter(p => p.id !== selectedProjectId);
     }
-    // 新規 or 上書き確認
     if (settings.some(p => p.id === id)) {
         if (!confirm(`${id} は既に存在します。上書きしてもよろしいですか？`)) {
             return;
@@ -207,12 +206,10 @@ function importData(event) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            // バックアップ形式チェック
             if (!data.project_settings) {
                 alert("不正なバックアップファイルです。");
                 return;
             }
-            // 上書き確認
             if (localStorage.getItem("project_settings") && !confirm("既存の設定を上書きします。続行しますか？")) {
                 return;
             }
@@ -228,7 +225,6 @@ function importData(event) {
             if (data.project_groups) {
                 localStorage.setItem("project_groups", JSON.stringify(data.project_groups));
             } else {
-                // キーが無い古いバックアップでもエラーにはしない
                 localStorage.removeItem("project_groups");
             }
             alert("復元が完了しました！");
@@ -245,7 +241,6 @@ function importData(event) {
 function resetAppData() {
     if (!confirm("データをエクスポートしてからアプリを初期化します。続行しますか？")) return;
 
-    // エクスポート
     const data = {
         project_settings: JSON.parse(localStorage.getItem("project_settings") || "[]"),
         project_logs: JSON.parse(localStorage.getItem("project_logs") || "[]"),
@@ -259,15 +254,12 @@ function resetAppData() {
     a.click();
     URL.revokeObjectURL(url);
 
-    // このアプリのデータだけ削除
     localStorage.removeItem("project_settings");
     localStorage.removeItem("project_logs");
     localStorage.removeItem("project_groups");
-    // このアプリのキャッシュだけ削除
     caches.keys().then(keys => {
         const scopePrefix = `${location.origin}/WorkTimeTracker`;
-        keys.filter(key => key.startsWith(scopePrefix))
-            .forEach(key => caches.delete(key));
+        keys.filter(key => key.startsWith(scopePrefix)).forEach(key => caches.delete(key));
     });
     alert("データをエクスポートしてアプリを初期化しました。");
     location.reload();

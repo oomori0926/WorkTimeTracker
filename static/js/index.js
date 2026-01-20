@@ -130,7 +130,6 @@ function updateWorkMemoSuggestions() {
             recentMemos.push(log.memo);
         }
     });
-    // ここで取得件数調整
     recentMemos.slice(0, 5).forEach(memo => {
         const option = document.createElement("option");
         option.value = memo;
@@ -265,14 +264,11 @@ function teardownSortables() {
     }
 }
 
-
+// フォルダーへ移動時、一番上に追加
 function moveProjectToFolderTop(projectId, gid) {
-    // 全フォルダーから除去
     projectGroups.order.forEach(g => {
         projectGroups.items[g] = (projectGroups.items[g] ?? []).filter(id => id !== projectId);
     });
-
-    // 未所属からも除去
     projectGroups.ungroupedOrder = projectGroups.ungroupedOrder.filter(id => id !== projectId);
 
     if (gid) {
@@ -281,7 +277,6 @@ function moveProjectToFolderTop(projectId, gid) {
             ...(projectGroups.items[gid] ?? [])
         ];
     } else {
-        // 未所属へ戻す
         projectGroups.ungroupedOrder.push(projectId);
     }
     saveProjectGroups();
@@ -303,7 +298,6 @@ function normalizeProjectGroups() {
         saveProjectGroups();
     }
 }
-
 
 
 // 月詳細切替
@@ -367,13 +361,11 @@ function removeFolder(id) {
 
     // フォルダー内のアイテム（順序保持）
     const items = (projectGroups.items[id] ?? []).slice();
-
-    // フォルダー消す
     projectGroups.order = projectGroups.order.filter(g => g !== id);
     delete projectGroups.items[id];
     delete projectGroups.meta[id];
 
-    // 未所属末尾に追加（重複なし）
+    // 未所属末尾に追加
     const prev = projectGroups.ungroupedOrder ?? [];
     const set = new Set(prev.concat(items));
     projectGroups.ungroupedOrder = Array.from(set);
@@ -412,7 +404,6 @@ function unlockDragSize(el) {
 
 // 選択抑止
 function addNoSelect() {
-    // クラスで全体を無効化
     document.documentElement.classList.add('no-select');
     __prevOnSelectStart = document.onselectstart;
     document.onselectstart = () => false;
@@ -422,7 +413,7 @@ function addNoSelect() {
     document.documentElement.style.webkitUserSelect= 'none';
     document.body.style.userSelect                 = 'none';
     document.body.style.webkitUserSelect           = 'none';
-    // すでに付いてしまったハイライトを消す
+    // 既に付いてしまったハイライト削除
     try {
         const sel = window.getSelection?.();
         if (sel && sel.removeAllRanges) sel.removeAllRanges();
@@ -431,7 +422,6 @@ function addNoSelect() {
 }
 
 function removeNoSelect() {
-    // クラス解除
     document.documentElement.classList.remove('no-select');
     document.onselectstart = __prevOnSelectStart || null;
     document.removeEventListener('selectstart', __blockSelectHandler, true);
@@ -440,7 +430,7 @@ function removeNoSelect() {
     document.documentElement.style.webkitUserSelect = '';
     document.body.style.userSelect                  = '';
     document.body.style.webkitUserSelect            = '';
-    // 念のため選択状態をクリア
+    // 選択状態をクリア
     try {
         const sel = window.getSelection?.();
         if (sel && sel.removeAllRanges) sel.removeAllRanges();
@@ -520,18 +510,16 @@ function getDropHit(evt) {
     for (const el of els) {
         if (skip(el)) continue;
 
-        // フォルダーのヘッダー命中を最優先で採用
+        // フォルダーのヘッダー命中を最優先
         const header = el.closest?.('.group-header');
         if (header) {
             const wrap = header.closest?.('[data-group-id]');
             const gid = wrap?.dataset?.groupId || null;
             if (gid) return { headerGid: gid, listEl: null };
         }
-        // “中身リスト”（未所属 or 開いているフォルダー）上か
         const list = el.closest?.('#ungroupedList, [id^="groupList_"]');
         if (list && !listEl) listEl = list;
     }
-    // どのリストでもヘッダーでもない → 背景
     return { headerGid: null, listEl };
 }
 
@@ -543,15 +531,11 @@ function setupSortables() {
         return;
     }
 
-    const sameListOnly = (el) => ({
-        name: el.id || 'projects',
-        pull: true,
-        put: (to, from) => to.el === from.el
-    });
+    const sameListOnly = (el) => ({name: el.id || 'projects', pull: true, put: (to, from) => to.el === from.el});
     const onStartCommon = (evt) => { addNoSelect(); lockDragSize(evt.item); startPointerTrack(); };
     const onEndCommon   = (evt) => { unlockDragSize(evt.item); removeNoSelect(); stopPointerTrack(); };
 
-    // フォルダー自体の並び替え（ヘッダー掴み）
+    // フォルダー自体の並び替え
     const groupsContainer = document.getElementById("groupsContainer");
     if (groupsContainer) {
         if (sortableGroups) sortableGroups.destroy();
@@ -649,7 +633,7 @@ function setupSortables() {
                     updateFolderCounts();
                     return;
                 }
-                // 最後の保険：どの条件にも該当しなければ未所属へ
+                // どの条件にも該当しなければ未所属へ
                 moveProjectToFolderTop(pid, null);
                 updateFolderCounts();
                 renderLogs();
@@ -661,7 +645,6 @@ function setupSortables() {
 
 
 function applyDomOrderToGroups() {
-    // DOMから各フォルダーの中身を再構成
     projectGroups.order.forEach(gid => {
         const list = document.getElementById(`groupList_${gid}`);
         if (!list) return;
@@ -863,7 +846,7 @@ function renderLogs(triggerType = "manual", options = {}) {
         updateButtons("btnEdit", "btnDelete", selectedLogIndex !== null);
     }
 
-    // 未所属（非グループ）を常に表示
+    // 未所属を常に表示
     const ungroupedIds = getUngroupedProjectIds();
     const ungroupedWrap = document.createElement("div");
     ungroupedWrap.className = "space-y-3 mb-4";
@@ -939,7 +922,6 @@ function renderLogs(triggerType = "manual", options = {}) {
                 toggleFolderOpen(gid);
             }
         });
-        // コンテンツ：開いている時のみ描画
         if (meta.open) {
             const list = document.createElement("div");
             list.id = `groupList_${gid}`;
@@ -958,10 +940,7 @@ function renderLogs(triggerType = "manual", options = {}) {
                 `;
                 list.appendChild(empty);
             } else {
-                items
-                .map(id => settings.find(s => s.id === id))
-                .filter(Boolean)
-                .forEach(pj => list.appendChild(buildProjectCard(pj, triggerType)));
+                items.map(id => settings.find(s => s.id === id)).filter(Boolean).forEach(pj => list.appendChild(buildProjectCard(pj, triggerType)));
             }
             gWrap.appendChild(list);
         }
@@ -986,7 +965,7 @@ function renderLogs(triggerType = "manual", options = {}) {
 function toggleTimer(projectId) {
     const now = new Date();
 
-    // すでに他で計測中なら停止して切り替え
+    // 他で計測中なら停止して切り替え
     const currentActive = Object.keys(activeTimers)[0];
     if (currentActive && currentActive !== projectId) {
         stopTimer(currentActive);
@@ -1278,18 +1257,14 @@ function clearSelection() {
     document.querySelectorAll('.log-row').forEach(row => row.classList.remove('bg-blue-100'));
 }
 
-
 // ツールチップ行の選択トグル
 function selectLogFromTooltip(index, rowEl) {
-    // すでに同じ行を選んでいたら解除
     if (selectedLogIndex === index) {
         clearSelection();
         return;
     }
 
-    // ツールチップ側のハイライトを一旦クリア
     document.querySelectorAll('.tt-log-row.selected').forEach(el => el.classList.remove('selected', 'bg-blue-100'));
-    // 選択更新 & ツールチップ側の可視化
     selectedLogIndex = index;
     if (rowEl) rowEl.classList.add('selected', 'bg-blue-100');
     updateButtons("btnEdit", "btnDelete", true);
