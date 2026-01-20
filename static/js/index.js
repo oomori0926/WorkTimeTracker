@@ -958,6 +958,111 @@ function renderLogs(triggerType = "manual", options = {}) {
 
 
 // ===================================
+// --- Global Add --------------------
+// ===================================
+
+// ヘッダーボタンのセットアップ
+(function setupGlobalAdd() {
+    const btn = document.getElementById('globalAddBtn');
+    const modal = document.getElementById('projectPickerModal');
+    const closeBtn = document.getElementById('projectPickerClose');
+    const searchInput = document.getElementById('projectPickerSearch');
+    const listWrap = document.getElementById('projectPickerList');
+
+    if (!btn || !modal || !closeBtn || !searchInput || !listWrap) return;
+
+    btn.addEventListener('click', () => {
+        if (typeof removeTooltip === 'function') removeTooltip(true);
+        if (typeof clearSelection === 'function') clearSelection();
+
+        searchInput.value = '';
+        renderProjectPickerList(listWrap, '');
+        modal.classList.remove('hidden');
+        setTimeout(() => searchInput.focus(), 0);
+    });
+
+    function closePicker() { modal.classList.add('hidden'); }
+    closeBtn.addEventListener('click', closePicker);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closePicker();
+    });
+    window.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('hidden') && e.key === 'Escape') closePicker();
+    });
+
+    // 検索（逐次フィルタ）
+    searchInput.addEventListener('input', () => {
+        renderProjectPickerList(listWrap, searchInput.value.trim());
+    });
+})();
+
+// リスト描画（未所属 → フォルダー順）
+function renderProjectPickerList(container, keyword) {
+    container.innerHTML = '';
+    const kw = (keyword || '').toLowerCase();
+    const makeSection = (title, ids) => {
+        const sec = document.createElement('div');
+        const header = document.createElement('div');
+        header.className = 'text-xs font-bold text-gray-500 flex items-center gap-2';
+        header.innerHTML = `<i class="ri-folder-2-line"></i> ${title}`;
+        sec.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'mt-2 grid gap-2 sm:grid-cols-2';
+
+        const items = ids.map(id => settings.find(s => s.id === id)).filter(Boolean).filter(p => {
+            if (!kw) return true;
+            const idHit = (p.id || '').toLowerCase().includes(kw);
+            const nameHit = (p.name || '').toLowerCase().includes(kw);
+            return idHit || nameHit;
+        });
+
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'text-gray-400 text-xs';
+            empty.textContent = '該当なし';
+            list.appendChild(empty);
+        } else {
+            items.forEach(p => list.appendChild(buildProjectPickerItem(p)));
+        }
+        sec.appendChild(list);
+        container.appendChild(sec);
+    };
+    // 未所属
+    const ungroupedIds = getUngroupedProjectIds?.() || [];
+    makeSection('未所属', ungroupedIds);
+    // 各フォルダー（定義順）
+    (projectGroups.order || []).forEach(gid => {
+        const title = projectGroups.meta?.[gid]?.title || 'Folder';
+        const ids = projectGroups.items?.[gid] || [];
+        makeSection(title, ids);
+    });
+}
+
+// リストの行（クリックで openModal(projectId) → 本登録モーダルへ）
+function buildProjectPickerItem(project) {
+    const div = document.createElement('button');
+    div.type = 'button';
+    div.className = `text-left w-full border rounded-md px-3 py-2 bg-white hover:bg-slate-50 flex items-center gap-3`;
+    div.innerHTML = `
+        <div class="min-w-0">
+        <div class="font-bold text-gray-800 truncate">${project.id}</div>
+        <div class="text-xs text-gray-500 truncate">${project.name || ''}</div>
+        </div>
+    `;
+    div.addEventListener('click', () => {
+        // 操作開始時に選択解除
+        if (typeof removeTooltip === 'function') removeTooltip(true);
+        if (typeof clearSelection === 'function') clearSelection();
+        // モーダルを閉じてから既存の登録モーダルへ
+        document.getElementById('projectPickerModal')?.classList.add('hidden');
+        openModal(project.id);
+    });
+    return div;
+}
+
+
+// ===================================
 // --- Timer -------------------------
 // ===================================
 

@@ -31,22 +31,27 @@
 
     <!-- ボタン関連 -->
     <div class="sticky top-0 bg-white z-10 px-4 py-3 rounded-md shadow max-w-full mx-auto flex justify-between items-center mb-6">
-        <button onclick="openCalendarModal()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1.5 rounded-md">
-            <i class="ri-calendar-2-line"></i> Calender
-        </button>
+        <div class="flex gap-2">
+            <button onclick="openCalendarModal()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md">
+                <i class="ri-calendar-2-line"></i>
+            </button>
+            <button id="sortModeBtn" onclick="toggleSortMode()" class="bg-slate-500 hover:bg-slate-600 text-white text-sm px-4 py-1.5 rounded-md transition-all duration-200 flex items-center gap-1">
+                <i id="sortModeIcon" class="ri-list-settings-line"></i>
+            </button>
+            <button id="addFolderBtn" class="bg-slate-500 enabled:hover:bg-slate-600 text-white text-sm px-4 py-1.5 rounded-md disabled:opacity-50" onclick="promptCreateFolder()" disabled>
+                <i class="ri-folder-add-line"></i>
+            </button>
+        </div>
 
-        <div class="flex gap-3">
-            <button id="sortModeBtn" onclick="toggleSortMode()" class="bg-slate-500 hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded-md transition-all duration-200 flex items-center gap-1">
-                <i id="sortModeIcon" class="ri-list-settings-line"></i> Reorder
+        <div class="flex gap-2">
+            <button id="globalAddBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-1.5 rounded-md">
+                <i class="ri-add-line"></i>
             </button>
-            <button id="addFolderBtn" class="bg-slate-500 enabled:hover:bg-slate-600 text-white text-sm px-3 py-1.5 rounded-md disabled:opacity-50" onclick="promptCreateFolder()" disabled>
-                <i class="ri-folder-add-line"></i> Folder
+            <button id="btnEdit" class="bg-indigo-500 enabled:hover:bg-indigo-600 text-white text-sm px-4 py-1.5 rounded-md disabled:opacity-50" onclick="editSelectedLog()" disabled>
+                <i class="ri-edit-2-fill"></i>
             </button>
-            <button id="btnEdit" class="bg-indigo-500 enabled:hover:bg-indigo-600 text-white text-sm px-5 py-1.5 rounded-md disabled:opacity-50" onclick="editSelectedLog()" disabled>
-                <i class="ri-edit-2-fill"></i> Edit
-            </button>
-            <button id="btnDelete" class="bg-red-500 enabled:hover:bg-red-600 text-white text-sm px-3 py-1.5 rounded-md disabled:opacity-50" onclick="deleteSelectedLog()" disabled>
-                <i class="ri-delete-bin-6-line"></i> Delete
+            <button id="btnDelete" class="bg-red-500 enabled:hover:bg-red-600 text-white text-sm px-4 py-1.5 rounded-md disabled:opacity-50" onclick="deleteSelectedLog()" disabled>
+                <i class="ri-delete-bin-6-line"></i>
             </button>
         </div>
     </div>
@@ -64,6 +69,27 @@
         <div id="footerToday"></div>
         <div id="footerStatus"></div>
     </footer>
+
+    <!-- Global Add: プロジェクト選択モーダル -->
+    <div id="projectPickerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[60]">
+        <div class="bg-white shadow-lg p-5 rounded-xl w-full max-w-screen-md mx-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-gray-800">
+                    プロジェクトを選択
+                </h3>
+                <button id="projectPickerClose" class="text-gray-500 hover:text-gray-800" title="閉じる">
+                    <i class="ri-close-large-line"></i>
+                </button>
+            </div>
+            <div class="mb-3">
+                <input id="projectPickerSearch" type="text" placeholder="工事番号 / 工事名称で検索" class="w-full border border-gray-300 rounded-md px-3 py-2" autocomplete="off" />
+            </div>
+
+            <div id="projectPickerList"
+                class="max-h-[60vh] overflow-auto space-y-4 text-sm">
+            </div>
+        </div>
+    </div>
 
     <!-- モーダル -->
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[60]">
