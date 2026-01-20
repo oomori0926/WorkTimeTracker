@@ -78,7 +78,7 @@ footerToday.addEventListener("mouseenter", () => {
 footerToday.addEventListener("mouseleave", () => {
     if (isTooltipFixed) return;
 
-    removeTooltip();
+    removeTooltip(false);
 });
 
 // ツールチップ固定切替
@@ -86,7 +86,7 @@ footerToday.addEventListener("click", () => {
     if (!isTooltipFixed) {
         showTooltip(true);
     } else {
-        removeTooltip();
+        removeTooltip(true);
     }
 });
 
