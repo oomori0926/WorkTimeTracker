@@ -314,18 +314,26 @@ function pushRecentMemoCode(code) {
 
 // モーダル開閉
 function openMemoCodePicker() {
-    const modal = document.getElementById('memoCodePickerModal');
+    const modal  = document.getElementById('memoCodePickerModal');
     const search = document.getElementById('memoCodeSearch');
-    if (!modal || !search) return;
+    const list   = document.getElementById('memoCodeList');
+    if (!modal || !search || !list) return;
 
-    renderMemoCodePickerList("");
+    search.value = '';
+    renderMemoCodePickerList('');
     modal.classList.remove('hidden');
     setTimeout(() => search.focus(), 0);
 }
 
 function closeMemoCodePicker() {
-    const modal = document.getElementById('memoCodePickerModal');
-    if (modal) modal.classList.add('hidden');
+    const modal  = document.getElementById('memoCodePickerModal');
+    const search = document.getElementById('memoCodeSearch');
+    const list   = document.getElementById('memoCodeList');
+    if (!modal) return;
+
+    modal.classList.add('hidden');
+    if (search) search.value = '';
+    if (list)   list.innerHTML = '';
 }
 
 // リスト描画／行生成／選択

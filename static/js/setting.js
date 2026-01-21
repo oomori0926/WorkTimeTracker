@@ -109,18 +109,26 @@ const ADD_PROJ_CODE_PRESETS = [
 
 // 開く/閉じる
 function openProjCodePicker() {
-    const modal = document.getElementById('projCodePickerModal');
+    const modal  = document.getElementById('projCodePickerModal');
     const search = document.getElementById('projCodeSearch');
-    if (!modal || !search) return;
+    const list   = document.getElementById('projCodeList');
+    if (!modal || !search || !list) return;
 
-    renderProjCodeList("");
+    search.value = '';
+    renderProjCodeList('');
     modal.classList.remove('hidden');
     setTimeout(() => search.focus(), 0);
 }
 
 function closeProjCodePicker() {
-    const modal = document.getElementById('projCodePickerModal');
-    if (modal) modal.classList.add('hidden');
+    const modal  = document.getElementById('projCodePickerModal');
+    const search = document.getElementById('projCodeSearch');
+    const list   = document.getElementById('projCodeList');
+    if (!modal) return;
+
+    modal.classList.add('hidden');
+    if (search) search.value = '';
+    if (list)   list.innerHTML = '';
 }
 
 // リスト描画
