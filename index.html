@@ -19,7 +19,7 @@
                 WorkTimeTracker
             </h1>
         </div>
-        <nav class="space-x-4 text-sm text-blue-600">
+        <nav class="space-x-4 text-md text-blue-600">
             <a href="index.html" class="hover:text-blue-900">
                 <i class="ri-home-2-line"></i> Home
             </a>
@@ -121,6 +121,11 @@
                     </label>
                     <input id="workMemo" list="workMemoSuggestions" placeholder="例：開発作業" class="border border-gray-300 p-2 rounded-md w-full h-full min-h-0" />
                     <datalist id="workMemoSuggestions"></datalist>
+                    <div class="mt-2">
+                        <button id="memoCodePickerBtn" type="button" class="border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs px-3 py-1.5 rounded-md">
+                            <i class="ri-list-check-2"></i> 作業コードから選択
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="flex gap-4 pt-6">
@@ -131,6 +136,24 @@
                     Cancel
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- 作業コード選択モーダル -->
+    <div id="memoCodePickerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-[70]">
+        <div class="bg-white shadow-lg p-6 rounded-xl w-full max-w-screen-md mx-8">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-gray-800">
+                    作業コードを選択
+                </h3>
+                <button id="memoCodePickerClose" class="text-gray-500 hover:text-gray-800" title="閉じる">
+                    <i class="ri-close-large-line"></i>
+                </button>
+            </div>
+            <div class="mb-3">
+                <input id="memoCodeSearch" type="text" placeholder="作業コード / 名称で検索" class="w-full border border-gray-300 rounded-md px-3 py-2" autocomplete="off" />
+            </div>
+            <div id="memoCodeList" class="max-h-[60vh] overflow-auto space-y-4 text-sm"></div>
         </div>
     </div>
 

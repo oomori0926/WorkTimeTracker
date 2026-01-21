@@ -14,6 +14,7 @@ const settings = JSON.parse(localStorage.getItem("project_settings") || "[]");
 const storedGroups = JSON.parse(localStorage.getItem("project_groups") || "null");
 const __blockSelectHandler = (e) => { e.preventDefault(); };
 
+let nextMemoSource = "manual";
 let isTooltipFixed = false;
 let sortMode = false;
 let sortable = null;
@@ -105,6 +106,8 @@ function openModal(projectId) {
     inputHours.value = "";
     inputMemo.value = "";
     updateWorkMemoSuggestions();
+    bindWorkMemoInputWatcher();
+    nextMemoSource = "manual";
     modal.classList.remove("hidden");
 }
 
@@ -115,25 +118,325 @@ function closeModal() {
     activeProject = null;
 }
 
-// 入力候補を取得
+// 入力候補を取得：手入力のみを5件
 function updateWorkMemoSuggestions() {
     const datalist = document.getElementById("workMemoSuggestions");
+    if (!datalist) return;
+
     datalist.innerHTML = "";
-
     const seen = new Set();
-    const recentMemos = [];
+    const recent = [];
 
-    // 最新順でユニークな作業内容を抽出(Auto Timer除外)
+    // 最新順でユニークな作業内容を抽出(Auto Timerと作業コード由来を除外)
     [...logs].reverse().forEach(log => {
-        if (log.memo && log.memo !== "Auto Timer" && !seen.has(log.memo)) {
-            seen.add(log.memo);
-            recentMemos.push(log.memo);
+        const memo = log.memo;
+        const source = log.memoSource || "manual";
+        if (!memo) return;
+        if (memo === "Auto Timer") return;
+        if (source === "code") return;
+        if (!seen.has(memo)) {
+            seen.add(memo);
+            recent.push(memo);
         }
     });
-    recentMemos.slice(0, 5).forEach(memo => {
+    recent.slice(0, 5).forEach(memo => {
         const option = document.createElement("option");
         option.value = memo;
         datalist.appendChild(option);
+    });
+}
+
+// 作業コード選択モーダル
+(function seedMemoCodePresetsIfEmpty() {
+    const KEY = "work_memo_presets";
+    const current = localStorage.getItem(KEY);
+
+    try {
+        const arr = current ? JSON.parse(current) : null;
+        if (Array.isArray(arr) && arr.length > 0 && typeof arr[0] === 'object' && 'code' in arr[0] && 'name' in arr[0]) {
+            return;
+        }
+        if (Array.isArray(arr) && typeof arr[0] === 'string') {
+            const migrated = arr.map(s => {
+                const m = s.match(/^(\d+)\s+(.+)$/);
+                return m ? { code: m[1], name: m[2] } : { code: null, name: s };
+            });
+            localStorage.setItem(KEY, JSON.stringify(migrated));
+            return;
+        }
+    } catch {}
+
+    const PRESETS = [
+        { code: "5301", name: "設計前段取り" },
+        { code: "5302", name: "組立図(進度100％)" },
+        { code: "5303", name: "部品図(進度100％)" },
+        { code: "5304", name: "回路・電仕様・管理" },
+        { code: "5305", name: "ﾄﾗｲ・確認" },
+        { code: "5306", name: "外注管理" },
+        { code: "5307", name: "運搬･W/C移動" },
+        { code: "5308", name: "出荷準備" },
+        { code: "5309", name: "設備DR" },
+        { code: "5310", name: "モデル(進度25％)" },
+        { code: "5311", name: "モデル(進度50％)" },
+        { code: "5312", name: "モデル(進度75％)" },
+        { code: "5313", name: "モデル(進度100％)" },
+        { code: "5314", name: "部品図(進度20％)" },
+        { code: "5315", name: "部品図(進度40％)" },
+        { code: "5316", name: "部品図(進度60％)" },
+        { code: "5317", name: "部品図(進度80％)" },
+        { code: "5318", name: "図面修正(自工程）" },
+        { code: "5319", name: "図面修正(構想不備)" },
+        { code: "5320", name: "図面修正(図面ミス)" },
+        { code: "5321", name: "図面修正(手配ミス)" },
+        { code: "5322", name: "図面修正(仕様不備)" },
+        { code: "5323", name: "出図" },
+        { code: "5401", name: "設計検討" },
+        { code: "5402", name: "電気設計" },
+        { code: "5403", name: "管理" },
+        { code: "5404", name: "電気施工" },
+        { code: "5405", name: "ﾄﾗｲ･調整" },
+        { code: "5406", name: "外注管理" },
+        { code: "5407", name: "運搬･W/C移動" },
+        { code: "5408", name: "出荷準備" },
+        { code: "5409", name: "設備DR" },
+        { code: "5411", name: "設計前の検討" },
+        { code: "5412", name: "ハード図作成作業" },
+        { code: "5413", name: "管理表作成" },
+        { code: "5414", name: "ソフト作成作業" },
+        { code: "5415", name: "取説作成" },
+        { code: "5416", name: "部品整理" },
+        { code: "5417", name: "BOX加工・配線" },
+        { code: "5418", name: "電気施工100％" },
+        { code: "5419", name: "I/Oチェック" },
+        { code: "5420", name: "手動回路の確認作業" },
+        { code: "5421", name: "自動運転の確認" },
+        { code: "5422", name: "計測･ﾃﾞｰﾀ取り･まとめ" },
+        { code: "5423", name: "機器調整" },
+        { code: "5424", name: "設備ﾁｪｯｸｼｰﾄ記入" },
+        { code: "5425", name: "客先での現地工事" },
+        { code: "5426", name: "図面、取説" },
+        { code: "5427", name: "設備の移動時間" },
+        { code: "5428", name: "外注手配管理" },
+        { code: "5429", name: "現地トライ修正作業" },
+        { code: "5431", name: "ハード図 1～50％" },
+        { code: "5432", name: "ソフト 1～20％" },
+        { code: "5433", name: "ソフト 20～40％" },
+        { code: "5434", name: "ソフト 40～60％" },
+        { code: "5435", name: "ソフト 60～80％" },
+        { code: "5436", name: "手動運転 1～50％" },
+        { code: "5437", name: "自動運転 1～20％" },
+        { code: "5438", name: "自動運転 20～40％" },
+        { code: "5439", name: "自動運転 40～60％" },
+        { code: "5440", name: "自動運転 60～80％" },
+        { code: "5441", name: "RA:電気部品準備・調査" },
+        { code: "5442", name: "追加手配・施工" },
+        { code: "5443", name: "ﾊｰﾄﾞ図ﾐｽ修正" },
+        { code: "5444", name: "RA:配線ミス" },
+        { code: "5445", name: "ソフト修正作業" },
+        { code: "5446", name: "客先要望対応：設計・検討" },
+        { code: "5447", name: "客先要望対応：変更・調整" },
+        { code: "5448", name: "設計不具合：設計・検討" },
+        { code: "5449", name: "設計不具合：変更・調整" },
+        { code: "5451", name: "電気施工20％" },
+        { code: "5452", name: "電気施工40％" },
+        { code: "5453", name: "電気施工60％" },
+        { code: "5454", name: "電気施工80％" },
+        { code: "5456", name: "調整確認20％" },
+        { code: "5457", name: "調整確認40％" },
+        { code: "5458", name: "調整確認60％" },
+        { code: "5459", name: "調整確認80％" },
+        { code: "5460", name: "調整確認100％" },
+        { code: "5461", name: "制御盤_ハーネス加工" },
+        { code: "5462", name: "制御盤_配線前工程" },
+        { code: "5463", name: "制御盤_部品取付作業" },
+        { code: "5464", name: "制御盤_配線作業" },
+        { code: "5465", name: "制御盤_確認作業" },
+        { code: "5481", name: "部品整理" },
+        { code: "5482", name: "制御BOX" },
+        { code: "5483", name: "スイッチユニット" },
+        { code: "5484", name: "可動部ハーネス" },
+        { code: "5485", name: "オプションBOX" },
+        { code: "5486", name: "その他ハーネス加工" },
+        { code: "5487", name: "その他前工程組立作業" },
+        { code: "5488", name: "メイン工程組立作業" },
+        { code: "5489", name: "PCセットアップ" },
+        { code: "5490", name: "検査、トライ" },
+        { code: "5491", name: "出荷準備" },
+        { code: "5492", name: "手直し" }
+    ];
+
+    localStorage.setItem(KEY, JSON.stringify(PRESETS));
+    console.log("work_memo_presets seeded (5301–5492).");
+})();
+
+// 取得関数
+function getMemoPresets() {
+    const KEY = "work_memo_presets";
+    try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return [];
+
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+
+        return arr.map(item => {
+            if (typeof item === "string") {
+                const m = item.match(/^(\d+)\s+(.+)$/);
+                return m ? { code: m[1], name: m[2] } : { code: null, name: item };
+            }
+            if (item && typeof item === "object") {
+                return { code: item.code ?? null, name: item.name ?? "" };
+            }
+            return { code: null, name: "" };
+        });
+    } catch {
+        return [];
+    }
+}
+
+// 最近使用したコード
+const RECENT_MEMO_KEY = "work_memo_recent_codes";
+function getRecentMemoCodeList() {
+    try {
+        const raw = localStorage.getItem(RECENT_MEMO_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+}
+
+function pushRecentMemoCode(code) {
+    if (!code) return;
+
+    const list = getRecentMemoCodeList();
+    const next = [code, ...list.filter(x => x !== code)].slice(0, 30);
+    localStorage.setItem(RECENT_MEMO_KEY, JSON.stringify(next));
+}
+
+// モーダル開閉
+function openMemoCodePicker() {
+    const modal = document.getElementById('memoCodePickerModal');
+    const search = document.getElementById('memoCodeSearch');
+    if (!modal || !search) return;
+
+    renderMemoCodePickerList("");
+    modal.classList.remove('hidden');
+    setTimeout(() => search.focus(), 0);
+}
+
+function closeMemoCodePicker() {
+    const modal = document.getElementById('memoCodePickerModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+// リスト描画／行生成／選択
+function renderMemoCodePickerList(keyword) {
+    const container = document.getElementById('memoCodeList');
+    if (!container) return;
+
+    container.innerHTML = "";
+    const normalize = s => (s || "").replace(/\u3000/g, " ").toLowerCase();
+    const kw = normalize(keyword);
+    const presets = getMemoPresets();
+    const byCode = new Map(presets.filter(p => p.code).map(p => [p.code, p]));
+    const filterFn = (p) => {
+        const codeHit = (p.code || "").toLowerCase().includes(kw);
+        const nameHit = (p.name || "").toLowerCase().includes(kw);
+        return kw ? (codeHit || nameHit) : true;
+    };
+
+    const recentCodes = getRecentMemoCodeList().filter(c => byCode.has(c));
+    const recentItems = recentCodes.map(c => byCode.get(c)).filter(filterFn);
+    const restItems = presets.filter(p => !recentCodes.includes(p.code)).filter(filterFn);
+    const makeSection = (title, items) => {
+        const sec = document.createElement('div');
+        const header = document.createElement('div');
+        header.className = 'text-xs font-bold text-gray-500 flex items-center gap-2';
+        header.innerHTML = `<i class="ri-bookmark-2-line"></i> ${title}`;
+        sec.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'mt-2 space-y-2';
+        if (items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'text-gray-400 text-xs';
+            empty.textContent = '該当なし';
+            list.appendChild(empty);
+        } else {
+            items.forEach(p => list.appendChild(buildMemoCodeItem(p)));
+        }
+        sec.appendChild(list);
+        container.appendChild(sec);
+    };
+    if (recentItems.length > 0) makeSection('最近使ったコード', recentItems);
+    makeSection('すべて', restItems);
+}
+
+
+function buildMemoCodeItem(preset) {
+    const { code, name } = preset;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `w-full text-left border rounded-md px-3 py-2 bg-white hover:bg-slate-50 flex items-center justify-between gap-3`;
+    btn.innerHTML = `
+    <div class="min-w-0">
+        <div class="font-bold text-gray-800 truncate">
+            ${code ? code : ''}${code && name ? ' ' : ''}${name || ''}
+        </div>
+    </div>
+    `;
+    btn.addEventListener('click', () => chooseMemoCode(preset));
+    return btn;
+}
+
+function chooseMemoCode(preset) {
+    const input = document.getElementById('workMemo');
+    if (!input) return;
+
+    const code = preset.code || '';
+    const name = preset.name || '';
+    const value = code ? `${code}${name ? ' ' : ''}${name}` : name;
+    input.value = value;
+    // 次回保存時の入力元は「作業コード」
+    nextMemoSource = "code";
+
+    if (code) pushRecentMemoCode(code);
+    closeMemoCodePicker();
+    input.focus();
+}
+
+
+// 初期バインド
+(function setupMemoCodePicker(){
+    const btn = document.getElementById('memoCodePickerBtn');
+    const modal = document.getElementById('memoCodePickerModal');
+    const closeBtn = document.getElementById('memoCodePickerClose');
+    const search = document.getElementById('memoCodeSearch');
+
+    if (!btn || !modal || !closeBtn || !search) return;
+
+    btn.addEventListener('click', openMemoCodePicker);
+    closeBtn.addEventListener('click', closeMemoCodePicker);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeMemoCodePicker(); });
+    window.addEventListener('keydown', (e) => {
+        if (!modal.classList.contains('hidden') && e.key === 'Escape') closeMemoCodePicker();
+    });
+    search.addEventListener('input', () => renderMemoCodePickerList(search.value.trim()));
+    search.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const first = modal.querySelector('#memoCodeList button');
+            if (first) first.click();
+        }
+    });
+})();
+
+function bindWorkMemoInputWatcher() {
+    const input = document.getElementById("workMemo");
+    if (!input) return;
+    if (input.__presetBound) return;
+    input.__presetBound = true;
+    input.addEventListener("input", () => {
+        // ユーザーがタイプしたら入力元は「手入力」に戻す
+        nextMemoSource = "manual";
     });
 }
 
@@ -160,14 +463,18 @@ function submitLog() {
         return alert("必須項目を入力してください。");
     }
 
-    const newEntry = { project: activeProject, date, hours, memo };
+    const newEntry = { project: activeProject, date, hours, memo, memoSource: nextMemoSource || "manual" };
     if (editIndex !== null) {
-        logs[editIndex] = newEntry;
+ // 編集時：元データの memoSource を尊重したければ下記に置換
+const prev = logs[editIndex] || {};
+const source = (prev.memo === memo && prev.memoSource) ? prev.memoSource : (nextMemoSource || "manual");
+logs[editIndex] = { ...newEntry, memoSource: source };
     } else {
         logs.push(newEntry);
     }
     saveLogs("submitLog");
 }
+
 
 // 編集
 function editLog(index) {
@@ -180,6 +487,9 @@ function editLog(index) {
     inputHours.value = log.hours;
     inputMemo.value = log.memo;
     updateWorkMemoSuggestions();
+    bindWorkMemoInputWatcher();
+    nextMemoSource = "manual";
+
     modal.classList.remove("hidden");
 }
 
@@ -286,12 +596,7 @@ function moveProjectToFolderTop(projectId, gid) {
 function normalizeProjectGroups() {
     const allIds = settings.map(s => s.id);
     const grouped = new Set(Object.values(projectGroups.items).flat());
-
-    // ungroupedOrder が空 or 不足してたら補完
-    const missing = allIds.filter(id =>
-        !grouped.has(id) &&
-        !projectGroups.ungroupedOrder.includes(id)
-    );
+    const missing = allIds.filter(id => !grouped.has(id) && !projectGroups.ungroupedOrder.includes(id));
 
     if (missing.length > 0) {
         projectGroups.ungroupedOrder.push(...missing);
@@ -547,8 +852,7 @@ function setupSortables() {
             onStart: onStartCommon,
             onEnd: (evt) => {
                 onEndCommon(evt);
-                const newOrder = Array.from(groupsContainer.querySelectorAll("[data-group-id]"))
-                .map(el => el.dataset.groupId);
+                const newOrder = Array.from(groupsContainer.querySelectorAll("[data-group-id]")).map(el => el.dataset.groupId);
                 projectGroups.order = newOrder;
                 saveProjectGroups();
             }
@@ -659,9 +963,7 @@ function applyDomOrderToUngrouped() {
     const list = document.getElementById("ungroupedList");
     if (!list) return;
 
-    projectGroups.ungroupedOrder =
-        Array.from(list.querySelectorAll(".project-card"))
-            .map(el => el.dataset.projectId);
+    projectGroups.ungroupedOrder = Array.from(list.querySelectorAll(".project-card")).map(el => el.dataset.projectId);
     saveProjectGroups();
 }
 
@@ -862,10 +1164,7 @@ function renderLogs(triggerType = "manual", options = {}) {
     list.className = `space-y-3 ${isEmpty ? '' : ''}`;
 
     if (!isEmpty) {
-        ungroupedIds
-        .map(id => settings.find(s => s.id === id))
-        .filter(Boolean)
-        .forEach(pj => list.appendChild(buildProjectCard(pj, triggerType)));
+        ungroupedIds.map(id => settings.find(s => s.id === id)).filter(Boolean).forEach(pj => list.appendChild(buildProjectCard(pj, triggerType)));
     }
     ungroupedWrap.appendChild(list);
     projectLogsDiv.appendChild(ungroupedWrap);
@@ -887,8 +1186,7 @@ function renderLogs(triggerType = "manual", options = {}) {
         const header = document.createElement("div");
         header.className = "group-header flex items-center justify-between px-3 py-2 border-b bg-slate-50";
         header.innerHTML = `
-        <div class="group-title flex items-center gap-2 select-none rounded cursor-pointer hover:bg-slate-100 px-1 py-0.5"
-            role="button" tabindex="0" aria-expanded="${meta.open}">
+        <div class="group-title flex items-center gap-2 select-none rounded cursor-pointer hover:bg-slate-100 px-1 py-0.5" role="button" tabindex="0" aria-expanded="${meta.open}">
             <span class="caret text-blue-600 text-xs">
                 ${meta.open ? '▼' : '▶'}
             </span>
@@ -912,11 +1210,11 @@ function renderLogs(triggerType = "manual", options = {}) {
 
         // クリック/キーで開閉（右側は除外）
         const titleHit = header.querySelector('.group-title');
-            titleHit?.addEventListener('click', (e) => {
+        titleHit?.addEventListener('click', (e) => {
             if (e.target && e.target.closest && e.target.closest('.group-actions')) return;
-                toggleFolderOpen(gid);
-            });
-            titleHit?.addEventListener('keydown', (e) => {
+            toggleFolderOpen(gid);
+        });
+        titleHit?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 toggleFolderOpen(gid);
@@ -1051,7 +1349,6 @@ function buildProjectPickerItem(project) {
         </div>
     `;
     div.addEventListener('click', () => {
-        // 操作開始時に選択解除
         if (typeof removeTooltip === 'function') removeTooltip(true);
         if (typeof clearSelection === 'function') clearSelection();
         // モーダルを閉じてから既存の登録モーダルへ
@@ -1107,7 +1404,7 @@ function stopTimer(projectId) {
         delete activeTimers[projectId];
         updateFooter();
         renderLogs("stopTimer");
-        return alert("1分未満の記録は無視されます。");
+        return alert("１分未満の計測は作業記録として登録できません。");
     }
 
     // 既存ログに同じ日＆プロジェクト＆メモ("Auto Timer")があるか探す
